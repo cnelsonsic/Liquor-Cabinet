@@ -1,0 +1,50 @@
+Liquor Cabinet is an app to keep track of your inventory of booze.
+It also tracks your intake of liquor and projects what you will need more of.
+From this information, it generates a shopping list of what you will need to buy and when.
+It should let you know a week in advance that you might run out of something.
+
+There will be a tray icon to quickly add things consumed.
+There should be a couple submenus like:
+Ingredients, Drinks
+Where each one has a list of ingredients and drinks on hand, sorted by popularity.
+In the main menu, there will be a quicklist of favorite ingredients, and a list of favorite drinks.
+1oz, 4oz, 8oz, 16oz, 32oz
+
+Could also have a "Drunk Mode" where you can just click on huge buttons with what's been used lately.
+Maybe also a drunk test that asks math questions to determine if you should really have another shot.
+
+Normal and Party Mode.
+Normal is 1oz portions, party is by 4oz.
+Larger portions in party mode.
+
+We can use http://demo.vmspython.org/pyhtmldoc/sympy.physics.units.html to convert units.
+
+The "drink" part is just a shortcut for a group of ingredients and how much.
+
+Actions:
+    Add:
+        Add Ingredient
+        Add Drink
+    Inventory:
+        Add
+        Subtract
+    Information:
+        Shopping List
+        Alcohol Intake
+        What Can I Make
+
+Money Making Scheme:
+There's the open source version, and then the Premium version.
+The Premium version has the nagging about having too much to drink optionally disabled.
+It also keeps track of who paid for it and shows so in the about window.
+Premium users also get Premium support (direct email line with me.)
+Open Source users get "community support" (still me.)
+Premium users also get put in the credits as supporters if they want.
+The Premium version is still GPL'd.
+
+
+
+
+
+
+
