@@ -12,6 +12,18 @@ METRIC = True
 IMPERIAL = False
 UNITEDSTATES = False
 
-TRAY_ICON = "bottle.png"
+TRAY_ICON = "resources/bottle.png"
 DATABASE_PATH = "sqlite:///liquor_cabinet.sqlite"
 DEBUG = False
+
+LOADING_MESSAGES = (
+    "Extruding Mesh Terrain",
+    "Balancing Domestic Coefficients",
+    "Inverting Career Ladder",
+    "Calculating Money Supply",
+    "Normalizing Social Network",
+    "Reticulating Splines",
+    "Adjusting Emotional Weights",
+    "Calibrating Personality Matrix",
+    "Inserting Chaos Generator",
+)

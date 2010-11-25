@@ -21,6 +21,9 @@ We can use http://demo.vmspython.org/pyhtmldoc/sympy.physics.units.html to conve
 
 The "drink" part is just a shortcut for a group of ingredients and how much.
 
+Should have a splash screen on first run, as well as bringing the gui up by default.
+Should also die when ctrl+c'd
+
 Actions:
     Add:
         Add Ingredient

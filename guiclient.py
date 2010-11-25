@@ -1,7 +1,10 @@
 import sys
 import functools
+import time
 
 from PyQt4 import QtGui, QtCore
+from PyQt4.QtCore import *
+from PyQt4.QtGui import *
 
 import baseclient, models
 from settings import *
@@ -149,17 +152,38 @@ class SystemTrayIcon(QtGui.QSystemTrayIcon):
 
 
 def main():
-    global client
-    client = baseclient.BaseClient(DATABASE_PATH, DEBUG)
-    client.load_defaults()
-    
     global app
     app = QtGui.QApplication(sys.argv)
+    app.setApplicationName("Liquor Cabinet")
+    
+    pixmap = QtGui.QPixmap("resources/splashscreen.png")
+    splash = QtGui.QSplashScreen(pixmap, Qt.WindowStaysOnTopHint)
+    
+    splash.setMask(pixmap.mask())
+    splash.show()
+    splash.showMessage(u'Starting...', Qt.AlignRight | Qt.AlignBottom)
+    
+    #Load our database...
+    global client
+    client = baseclient.BaseClient(DATABASE_PATH, DEBUG)
+    
+    splash.showMessage(u'Loading database...', Qt.AlignRight | Qt.AlignBottom)
+    client.load_defaults()
+    
+    splash.showMessage(u'Populating Menus...', Qt.AlignRight | Qt.AlignBottom)
+
+    app.processEvents()
 
     w = QtGui.QWidget()
     trayIcon = SystemTrayIcon(QtGui.QIcon(TRAY_ICON), w)
 
     trayIcon.show()
+    
+    time.sleep(3)
+
+
+    splash.finish(w)
+
     sys.exit(app.exec_())
 
 if __name__ == '__main__':

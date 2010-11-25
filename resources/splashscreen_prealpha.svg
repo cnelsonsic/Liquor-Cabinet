@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="822.84375"
+   height="919.23877"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.48.0 r9654"
+   sodipodi:docname="splashscreen_prealpha.svg"
+   inkscape:export-filename="/media/sda1/backup_projects/liquor_cabinet/resources/splashscreen.png"
+   inkscape:export-xdpi="50"
+   inkscape:export-ydpi="50">
+  <defs
+     id="defs4">
+    <filter
+       inkscape:collect="always"
+       id="filter5463"
+       color-interpolation-filters="sRGB">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="2.7215377"
+         id="feGaussianBlur5465" />
+    </filter>
+    <filter
+       inkscape:collect="always"
+       id="filter5549"
+       color-interpolation-filters="sRGB">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="3.2344688"
+         id="feGaussianBlur5551" />
+    </filter>
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.81371677"
+     inkscape:cx="411.42188"
+     inkscape:cy="459.61938"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     inkscape:window-width="1280"
+     inkscape:window-height="950"
+     inkscape:window-x="0"
+     inkscape:window-y="25"
+     inkscape:window-maximized="1"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0">
+    <inkscape:grid
+       type="xygrid"
+       id="grid5447"
+       empspacing="5"
+       visible="true"
+       enabled="true"
+       snapvisiblegridlinesonly="true" />
+  </sodipodi:namedview>
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(69.833859,-141.20932)">
+    <rect
+       style="fill:#e9b96e;fill-opacity:1;stroke:none"
+       id="rect5558"
+       width="724.83673"
+       height="912.17938"
+       x="174.90895"
+       y="149.22673"
+       transform="matrix(1,0,-0.3233669,0.94627366,0,0)"
+       ry="362.41837" />
+    <g
+       id="g5306"
+       transform="matrix(0.97878287,-0.2049002,0.2049002,0.97878287,-208.68108,175.24142)">
+      <path
+         sodipodi:nodetypes="cssccssccc"
+         inkscape:connector-curvature="0"
+         id="path2985"
+         d="m 322.64099,89.120643 c 0,0 32.46829,176.145847 -10e-6,254.531247 -14.03164,33.87537 -63.7496,43.90589 -77.78124,77.78126 -67.13702,162.08312 -10e-6,526.31249 -10e-6,526.31249 32.01909,19.69554 216.66153,21.60482 254.37501,10e-6 0,0 67.13702,-364.22939 0,-526.31251 -14.03164,-33.87537 -63.74962,-43.90588 -77.78125,-77.78125 -32.4683,-78.3854 0,-254.531244 0,-254.531244 l -49.40626,-5e-6 z"
+         style="fill:#d3d7cf;fill-opacity:1;stroke:#888a85;stroke-width:10;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+      <path
+         sodipodi:nodetypes="ccccc"
+         inkscape:connector-curvature="0"
+         id="path5270"
+         d="m 217.36625,720.33347 c 137.67904,37.94039 175.84383,62.06388 299.00237,78.44741 l -14.8083,150.17402 c -86.37986,18.24726 -172.24654,24.69137 -256.7595,-10e-6 z"
+         style="opacity:0.58754859;fill:#a40000;stroke:none" />
+      <path
+         style="fill:none;stroke:#555753;stroke-width:10;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+         d="m 322.64099,89.120643 c 0,0 32.46829,176.145847 -10e-6,254.531247 -14.03164,33.87537 -63.7496,43.90589 -77.78124,77.78126 -67.13702,162.08312 -10e-6,526.31249 -10e-6,526.31249 32.01909,19.69554 216.66153,21.60482 254.37501,10e-6 0,0 67.13702,-364.22939 0,-526.31251 -14.03164,-33.87537 -63.74962,-43.90588 -77.78125,-77.78125 -32.4683,-78.3854 0,-254.531244 0,-254.531244 l -49.40626,-5e-6 z"
+         id="path5304"
+         inkscape:connector-curvature="0"
+         sodipodi:nodetypes="cssccssccc" />
+    </g>
+    <g
+       id="g5498"
+       transform="matrix(0.92248396,0.01463887,-0.01463887,0.92248396,11.141385,129.68329)">
+      <g
+         style="fill:#2e3436;fill-opacity:1;stroke:none;filter:url(#filter5463)"
+         id="g5449"
+         transform="translate(-63.638062,-61.648403)">
+        <text
+           y="449.79272"
+           x="384.58423"
+           sodipodi:linespacing="125%"
+           id="text5451"
+           style="font-size:261.20117188px;font-style:italic;font-variant:normal;font-weight:500;font-stretch:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#2e3436;fill-opacity:1;stroke:none;font-family:URW Chancery L;-inkscape-font-specification:URW Chancery L Medium Italic"
+           xml:space="preserve"><tspan
+             id="tspan5453"
+             style="font-size:261.20117188px;font-style:italic;font-variant:normal;font-weight:500;font-stretch:normal;text-align:center;line-height:125%;writing-mode:lr-tb;text-anchor:middle;fill:#2e3436;fill-opacity:1;stroke:none;font-family:URW Chancery L;-inkscape-font-specification:URW Chancery L Medium Italic">Liquor</tspan></text>
+        <text
+           y="642.03271"
+           x="145.2348"
+           sodipodi:linespacing="125%"
+           id="text5455"
+           style="font-size:234.60939026px;font-style:italic;font-variant:normal;font-weight:500;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#2e3436;fill-opacity:1;stroke:none;font-family:URW Chancery L;-inkscape-font-specification:URW Chancery L Medium Italic"
+           xml:space="preserve"><tspan
+             id="tspan5457"
+             style="font-size:234.60939026px;font-style:italic;font-variant:normal;font-weight:500;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;fill:#2e3436;fill-opacity:1;stroke:none;font-family:URW Chancery L;-inkscape-font-specification:URW Chancery L Medium Italic">Cabinet</tspan></text>
+      </g>
+      <g
+         transform="translate(-69.638062,-67.648403)"
+         id="g5311">
+        <text
+           xml:space="preserve"
+           style="font-size:261.20117188px;font-style:italic;font-variant:normal;font-weight:500;font-stretch:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#c17d11;fill-opacity:1;stroke:#8f5902;stroke-width:6.97326899;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;font-family:URW Chancery L;-inkscape-font-specification:URW Chancery L Medium Italic"
+           id="text5208"
+           sodipodi:linespacing="125%"
+           x="384.58423"
+           y="449.79272"><tspan
+             style="font-size:261.20117188px;font-style:italic;font-variant:normal;font-weight:500;font-stretch:normal;text-align:center;line-height:125%;writing-mode:lr-tb;text-anchor:middle;stroke-width:6.97326899;font-family:URW Chancery L;-inkscape-font-specification:URW Chancery L Medium Italic"
+             id="tspan5212">Liquor</tspan></text>
+        <text
+           xml:space="preserve"
+           style="font-size:234.60939026px;font-style:italic;font-variant:normal;font-weight:500;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#c17d11;fill-opacity:1;stroke:#8f5902;stroke-width:6.26335001;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;font-family:URW Chancery L;-inkscape-font-specification:URW Chancery L Medium Italic"
+           id="text5208-1"
+           sodipodi:linespacing="125%"
+           x="145.2348"
+           y="642.03271"><tspan
+             style="font-size:234.60939026px;font-style:italic;font-variant:normal;font-weight:500;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;stroke-width:6.26335001;font-family:URW Chancery L;-inkscape-font-specification:URW Chancery L Medium Italic"
+             id="tspan5212-9">Cabinet</tspan></text>
+      </g>
+    </g>
+  </g>
+</svg>
