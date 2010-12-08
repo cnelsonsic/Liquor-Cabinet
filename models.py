@@ -26,10 +26,11 @@ class Ingredient(Base):
     size = Column(Float)
     current_amount = Column(Float)
     threshold = Column(Float)
+    potency = Column(Float) #Percent alcahol
     note = Column(String)
     amount_used = Column(Float)
 
-    def __init__(self, name, barcode, size, current_amount=0, threshold=-1, note="", amount_used=0, id=None):
+    def __init__(self, name, barcode, size, current_amount=0, threshold=-1, note="", amount_used=0, potency=5.0, id=None):
         if id is not None:
             self.id = id
         self.name = name
@@ -41,6 +42,7 @@ class Ingredient(Base):
         self.threshold = threshold
         self.note = note
         self.amount_used = amount_used
+        self.potency = potency
         
         #If no threshold is set, warn if it drops below 1/4th of its size.
         if threshold == -1:
