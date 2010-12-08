@@ -5,9 +5,9 @@
             <caption class="shopping">Shopping list for $date</caption>
             <tr class="shopping">
                 <th class="shopping">&#x2611;</th>
-                <th class="shopping">Name</th>
-                <th class="shopping">Current Amount</th>
-                <th class="shopping">Amount Used</th>
+                #for $i in $headings:
+					<th class="shopping">$i</th>
+				#end for
             </tr>
             
             #for $i in $ingredients:
