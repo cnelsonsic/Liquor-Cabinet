@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   inkscape:version="0.48.0 r9654"
+   version="1.1"
+   id="svg2"
+   height="512"
+   width="512"
+   sodipodi:docname="liquid.svg"
+   inkscape:export-filename="/media/sda1/backup_projects/liquor_cabinet/resources/liquid.png"
+   inkscape:export-xdpi="90"
+   inkscape:export-ydpi="90">
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.97700052"
+     inkscape:cx="249.04582"
+     inkscape:cy="126.519"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     inkscape:window-width="1280"
+     inkscape:window-height="950"
+     inkscape:window-x="0"
+     inkscape:window-y="25"
+     inkscape:window-maximized="1" />
+  <defs
+     id="defs4" />
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(0,-540.36218)">
+    <path
+       style="fill:#a40000;stroke:#000000;stroke-width:0.59569269000000002px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;fill-opacity:1"
+       d="m -35.73921,545.88096 c 8.59033,-8.46446 28.43505,6.91431 42.9184,6.78706 11.34075,-0.0996 22.18433,-5.2634 33.50742,-5.90404 9.33524,-0.52817 18.71948,0.56281 27.997698,1.72051 14.899207,1.85907 29.271859,9.26594 44.259822,8.3696 9.99192,-0.59755 18.63762,-8.48531 28.63108,-9.05653 15.03224,-0.85924 29.2867,8.25412 44.33886,8.62685 8.93966,0.22137 17.69824,-2.57724 26.55471,-3.81395 14.95284,-2.08803 29.79843,-5.44587 44.88266,-6.08872 12.77056,-0.54425 25.70794,-0.29753 38.29922,1.90321 9.93036,1.73567 18.84302,8.7818 28.92379,8.83381 13.4989,0.0697 25.35511,-11.71854 38.85108,-11.42889 11.86406,0.25463 21.9872,9.54149 33.69075,11.50299 11.99873,2.01098 24.37623,1.14943 36.49806,0.1129 10.8083,-0.92422 21.21166,-5.26772 32.05354,-5.62432 12.68697,-0.4173 25.16995,4.41774 37.85986,4.10249 11.69369,-0.2905 25.73339,-13.07101 34.65688,-5.50809 167.70683,142.13649 161.038,504.98176 4.66016,659.49496 -138.65027,136.9969 -449.056979,128.8874 -584.64054,-11.1454 -151.35059,-156.3173 -177.07055,-539.29987 8.63012,-652.69007 0.56497,-0.34497 1.77838,0.88377 1.77838,0.88377"
+       id="path2985"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="saaaaaaaaaaaaaaaaaaac" />
+  </g>
+</svg>
