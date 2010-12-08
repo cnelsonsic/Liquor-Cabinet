@@ -7,6 +7,7 @@ import time, datetime
 import random
 import signal
 import json
+import platform
 
 from Cheetah.Template import Template
 
@@ -22,8 +23,6 @@ from settings import *
 from graph_interpolation import extrapolate_to_y_zero_linear
 
 #TODO:
-#Ingredient adding/modification interface, simple form. 
-    #A lock thing that warns about how they're editing data for the whole object?
 #Charts that graph drinking of an ingredient over time.
     #Allow multiple selections
     #Export to CSV for graphing in external applications
@@ -35,7 +34,7 @@ class HTMLPrinter(QtWebKit.QWebView):
         self.setHtml(html, QtCore.QUrl("qrc://"))
         
         path = os.getcwd()
-        self.settings().setUserStyleSheetUrl(QUrl.fromLocalFile(path+RESOURCES_DIR+"/style.css"))
+        self.settings().setUserStyleSheetUrl(QUrl.fromLocalFile(path+"/"+RESOURCES_DIR+"style.css"))
         
         self.preview = QPrintPreviewDialog()
         self.connect(self.preview, SIGNAL("paintRequested (QPrinter *)"), SLOT("print (QPrinter *)"))
@@ -116,18 +115,18 @@ class SystemTrayIcon(QtGui.QSystemTrayIcon):
             parent = self.given_parent
         
         self.menu = QtGui.QMenu(parent)
-        
-        exitAction = self.menu.addAction("Exit")
-        self.connect(exitAction, QtCore.SIGNAL('triggered()'), app.exit)
-        
-        self.menu.addSeparator()
-        
-        self._init_time(self.menu)
-        
-        self.menu.addSeparator()
-        
-        self._init_new(self.menu)
-        self._init_inventory(self.menu)
+            
+        funcs = [
+                functools.partial(self._init_exit),
+                functools.partial(self.menu.addSeparator),
+                functools.partial(self._init_time, self.menu),
+                functools.partial(self.menu.addSeparator),
+                #functools.partial(self._init_new, self.menu),
+                functools.partial(self._init_inventory, self.menu),
+                ]
+
+        for f in funcs:
+            f()
         
         self.setContextMenu(self.menu)
         
@@ -156,9 +155,12 @@ class SystemTrayIcon(QtGui.QSystemTrayIcon):
         self.connect(newDrink, QtCore.SIGNAL('triggered()'), self.do_new_drink)
         self.newMenu = newMenu
         
+    def _init_exit(self):
+        self.exitAction = self.menu.addAction("Exit")
+        self.connect(self.exitAction, QtCore.SIGNAL('triggered()'), app.exit)
+        
     def _init_inventory(self, menu):
         #Inventory 
-
         inventoryMenu = menu.addMenu("Inventory")
         
         #Add all our known ingredients
@@ -215,9 +217,10 @@ class SystemTrayIcon(QtGui.QSystemTrayIcon):
         menu.addSeparator()
         
         #Favorite/Popular Ingredients
+        #TODO: Move into its own function so we can reorder it.
         for i in client.get_popular_ingredients(5):
             menu.addMenu(self.ingredient_menus[i.name])
-            
+        
         self.inventoryMenu = inventoryMenu
         
     def do_print(self, value):
@@ -346,14 +349,18 @@ class MainWindow(QtGui.QWidget):
         self.ingredients_tab = QtGui.QWidget()
         self.ingredients_tab.setLayout(QtGui.QHBoxLayout())
         self.tabs.addTab(self.ingredients_tab, "Ingredients")
+        self.ingredients_tab.layout().addWidget(IngredientsEditor())
+        
+        #The ShoppingList widget
+        self.shoppinglist = QtGui.QWidget()
+        self.shoppinglist.setLayout(QtGui.QHBoxLayout())
+        self.tabs.addTab(self.shoppinglist, "Shopping List")
+        self.shoppinglist.layout().addWidget(ShoppingList())
         
         #The StatisticsViewer widget
         self.statistics = QtGui.QWidget()
         self.statistics.setLayout(QtGui.QHBoxLayout())
         self.tabs.addTab(self.statistics, "Statistics")
-
-        
-        
         
         '''#Build our main window:
             #Build our ingredient adding/modification interface
@@ -378,14 +385,14 @@ class ShoppingList(QtGui.QWidget):
         
         self.tree = QtGui.QTreeWidget()
         self.tree.setColumnCount(4)
-        self.tree.setHeaderLabels((u"\u2611", "Name", "Current Amount", "Amount Used"))
+        self.tree.setHeaderLabels((u"\u2611", "Name", "Current Amount", "Amount Used", "Barcode"))
         
         items = list()
         emptybox = QtCore.QString(u"\u2610")
         data = None
         for ingr in client.get_out_of_stock():
             item = QTreeWidgetItem(self.tree)
-            data = (emptybox, ingr.name, str(int(ingr.current_amount))+"mL", str(int(ingr.amount_used))+"mL")
+            data = (emptybox, ingr.name, str(int(ingr.current_amount))+"mL", str(int(ingr.amount_used))+"mL", ingr.barcode)
             for t in enumerate(data):
                 item.setText(t[0], t[1])
             items.append(item)
@@ -410,10 +417,12 @@ class ShoppingList(QtGui.QWidget):
     def print_html(self):
         rows = []
         for ingr in client.get_out_of_stock():
-            data = (ingr.name, str(int(ingr.current_amount))+"mL", str(int(ingr.amount_used))+"mL")
+            data = (ingr.name, str(int(ingr.current_amount))+"mL", str(int(ingr.amount_used))+"mL", ingr.barcode)
             rows.append(data)
         
-        data = {'date':datetime.datetime.now().strftime("%x"), 'ingredients':rows}
+        headings = ["Name", "Current Amount", "Amount Used", "Barcode"]
+        
+        data = {'date':datetime.datetime.now().strftime("%x"), 'ingredients':rows, 'headings':headings}
         t = Template(file=TEMPLATE_DIR+"shopping_list.tmpl", searchList=[data])
         
         self.h = HTMLPrinter(html=str(t))
@@ -490,16 +499,241 @@ class IngredientEditorPane(QtGui.QWidget):
         client.commit()
         client.dump_to_disk()
         
+class BottleFullnessGuage(QtGui.QGraphicsView):
+    '''Draw a thermometer style image that shows the level of a statistic
+    as a wavy filled bar at `level`, based on how large `maximum` is,
+    with a second marker that displays a caution type image.'''
+    #TODO: Reimplement as a QWidget with paintEvent for speed and/or simplicity and/or scalability.
+    def __init__(self, maximum=100, level=50, warn=25, suffix=" mL", parent=None):
+        QtGui.QGraphicsView.__init__(self, parent)
+        
+        self.maximum = maximum
+        self.level = level
+        self.warn = warn
+        
+        self.setFixedSize(QtCore.QSize(256, 256))
+        #self.resize(256, 256)
+        
+        self.scene = QtGui.QGraphicsScene()
+        self.setScene(self.scene)
+        
+        self.setInteractive(False)
+        
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        
+        path = os.getcwd()+"/"+RESOURCES_DIR
+        
+        liquid = QtGui.QPixmap(path+"liquid.png")
+        caution = QtGui.QPixmap(path+"caution.png")
+        bottle = QtGui.QPixmap(path+"bottle_transparent_big.png")
+        
+        self.liquid = self.scene.addPixmap(liquid)
+        self.caution = self.scene.addPixmap(caution)
+        self.bottle = self.scene.addPixmap(bottle)
+        self.imagemap = {self.liquid:liquid, self.caution:caution, self.bottle:bottle}
+        
+        self.warntext = self.scene.addText('')
+        if level > warn:
+            self.warntext.setHtml("<b>%s</b>" % "Notify at: %d%s"%(warn, suffix))
+        
+        self.leveltext = self.scene.addText('')
+        self.leveltext.setHtml("<b>%s</b>" % "Current: %d%s"%(level, suffix))
+        
+        self.maxtext = self.scene.addText('')
+        self.maxtext.setHtml("<b>%s</b>" % "Total: %d%s"%(maximum, suffix))
+        
+        #self.ensureVisible(self.bottle)
+        self.centerOn(self.bottle)
+        self.resizeEvent(None)
+         
+    def resizeEvent(self, event):
+        size = self.size()
+        width = size.width()
+        height = size.height()
+        
+        if size.width() != size.height():
+            s = (size.width()+size.height())/2
+            return self.resize(s, s)
+            
+        for i in self.items():
+            if i in self.imagemap:
+                pixmap = self.imagemap[i]
+                pixmap = pixmap.scaled(size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                i.setPixmap(pixmap)
+        
+        #self.ensureVisible(self.bottle)
+        self.centerOn(self.bottle)
+        
+        maxmod = size.height()/float(max(self.maximum, 1))
+        
+        height = size.height()
+        level = height-(self.level*maxmod)
+        warn = height-(self.warn*maxmod)
+        
+        self.liquid.setPos(0,0)
+        self.liquid.moveBy(0, level)
+        
+        self.caution.setPos(0,0)
+        self.caution.moveBy(0, warn)
+        
+        centerx = size.width()/3.75
+        self.maxtext.setPos(centerx, height-(height/10.0))
+        self.warntext.setPos(centerx, warn)
+        self.leveltext.setPos(centerx, level+10)
+           
 class IngredientViewerPane(QtGui.QWidget):
     '''Shows a set of labels populated with information about Ingredients.'''
     def __init__(self, ingredient, parent=None):
         QtGui.QWidget.__init__(self, parent)
         self.ingredient = ingredient
         
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+        
+        name = QLabel()
+        name.setTextFormat(Qt.RichText)
+        name.setText("<h1>%s</h1>" % self.ingredient.name.replace("_", " ").title())
+        self.layout().addWidget(name)
+        
+        
+        warninglabel = QLabel()
+        warninglabel.setTextFormat(Qt.RichText)
+        if self.ingredient.current_amount > self.ingredient.threshold:
+            warninglabel.setText("<h2>%.2f%% inventory</h2>" % (self.ingredient.current_amount/float(self.ingredient.size)*100))
+        elif self.ingredient.current_amount <= 0:
+            warninglabel.setText("<h2>%s</h2>" % "Out of Stock!")
+        else:
+            warninglabel.setText("<h2>%s</h2>" % "Inventory low!")
+        self.layout().addWidget(warninglabel)
+        
+        self.bottle = BottleFullnessGuage(maximum=self.ingredient.size, level=self.ingredient.current_amount, warn=self.ingredient.threshold)
+        layout.addWidget(self.bottle)
+        
+        formlayout = QtGui.QFormLayout()
+        layout.addLayout(formlayout)
+        
+        #Maybe show UPC with this image (With appropriate cacheing): "http://www.upcdatabase.com/barcode/ean13/%s"
+        
+        self.fields = ('potency', 'barcode', 'note')
+        
+        for a in self.fields:
+            
+            value = getattr(ingredient, a)
+            vt = type(value)
+            if vt in (int, float, long):
+                value = str(int(value))
+            else:
+                value = str(value)
+            
+            if a == "potency":
+                value += "%ABV"
+            
+            i = QLabel(str(value))
+            i.setWordWrap(True)
+            
+            label = a.replace("_", " ").title()+":"
+            formlayout.addRow(label, i)
+               
 class IngredientsEditor(QtGui.QWidget):
-    '''Shows a list of Ingredients and an IngredientEditorPane when one is selected.'''
+    '''Shows a list of Ingredients and an IngredientEditorPane when one is selected.
+    When it becomes visible, it loads the list of ingredients from the database.
+    It selects either the first item or the last one selected.
+    It then displays a viewer pane on the right which shows you information about the '''
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
+        
+        layout = QHBoxLayout()
+        self.setLayout(layout)
+        
+        self.ingredients = client.get_ingredients()
+        
+        self.ingredict = {}
+        for v in self.ingredients:
+            self.ingredict.update({v.name:v})
+            
+        self.last_selection = ""
+        
+        self.leftcol = QVBoxLayout()
+        
+        self.listwidget = QtGui.QListWidget()
+        self.listwidget.setFixedWidth(self.width()/3.0)
+        self.leftcol.addWidget(self.listwidget)
+        self.listwidget.connect(self.listwidget, SIGNAL("itemSelectionChanged()"), self.show_edit_pane)
+        
+        self.addbutton = QtGui.QPushButton("Add Ingredient")
+        self.addbutton.connect(self.addbutton, SIGNAL("clicked()"), self.add_new_ingredient)
+        self.leftcol.addWidget(self.addbutton)
+        
+        self.layout().addLayout(self.leftcol)
+        
+        self.evcontainer = QtGui.QWidget()
+        self.evcontainer.setLayout(QVBoxLayout())
+        self.layout().addWidget(self.evcontainer)
+        self.evpane = None
+        self.editbutton = QPushButton("Enable Editing")
+        self.editbutton.connect(self.editbutton, SIGNAL("clicked()"), self.toggle_editmode)
+        self.editing = False
+        
+        self.update_listwidget()
+    
+    def add_new_ingredient(self):
+        i = models.Ingredient('New Ingredient', '', 0)
+        client.try_add(i)
+        client.commit()
+        self.showEvent(None)
+        self.listwidget.setCurrentItem(self.listwidget.item(self.listwidget.count()-1))
+        self.toggle_editmode()
+    
+    def toggle_editmode(self):
+        self.editing = not self.editing
+        if self.editing:
+            self.editbutton.setText("Disable Editing")
+        else:
+            self.editbutton.setText("Enable Editing")
+            self.update_listwidget()
+        self.add_viewpane()
+    
+    def update_listwidget(self):
+        self.ingredients = client.get_ingredients()
+        self.listwidget.clear()
+        for i in self.ingredients:
+            self.ingredict.update({i.name:i})
+            newitem = QtGui.QListWidgetItem(i.name)
+            self.listwidget.addItem(newitem)
+            
+        items = self.listwidget.findItems(self.last_selection, Qt.MatchExactly)
+        if items != []:
+            self.listwidget.setCurrentItem(items[0])
+        else:
+            self.listwidget.setCurrentItem(self.listwidget.item(0))
+        
+    def show_edit_pane(self):
+        if self.listwidget.selectedItems() != []:
+            self.last_selection = str(self.listwidget.selectedItems()[0].text())
+            self.add_viewpane()
+    
+    def add_viewpane(self):
+        self.evcontainer.layout().removeWidget(self.evpane)
+        if self.evpane is not None:
+            self.evpane.setParent(None)
+        
+        if self.last_selection in self.ingredict:
+            if self.editing:
+                self.evpane = IngredientEditorPane(self.ingredict[self.last_selection])
+            else:
+                self.evpane = IngredientViewerPane(self.ingredict[self.last_selection])
+            self.evcontainer.layout().addWidget(self.evpane)
+            self.evcontainer.layout().addWidget(self.editbutton)
+        else:
+            print "Last selection not in ingredients!"
+    
+    def showEvent(self, event):
+        self.update_listwidget()
+        try:
+            event.ignore()
+        except(AttributeError):
+            pass
         
 
 def main():
@@ -567,6 +801,15 @@ def main():
     
     #ied = IngredientsEditor()
     #ied.show()
+    
+    #ivp = IngredientViewerPane(client.get_ingredients()[0])
+    #ivp.show()
+    
+    #inged = IngredientsEditor()
+    #inged.show()
+    
+    #b = BottleFullnessGuage()
+    #b.show()
     
     print("There is now a red and white potion bottle in your system tray. That's where all your icons go. Click to get a window, right click to get a menu.")
     print("CTRL+C will exit the program, but will not save data automatically. Closing from the program will save your data automatically.")
