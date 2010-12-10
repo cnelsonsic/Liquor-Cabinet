@@ -1,53 +1,60 @@
-Liquor Cabinet is an app to keep track of your inventory of booze.
-It also tracks your intake of liquor and projects what you will need more of.
-From this information, it generates a shopping list of what you will need to buy and when.
-It should let you know a week in advance that you might run out of something.
+# Liquor Cabinet #
+**v0.0.1-alpha3**
 
-There will be a tray icon to quickly add things consumed.
-There should be a couple submenus like:
-Ingredients, Drinks
-Where each one has a list of ingredients and drinks on hand, sorted by popularity.
-In the main menu, there will be a quicklist of favorite ingredients, and a list of favorite drinks.
-1oz, 4oz, 8oz, 16oz, 32oz
+*A desktop application to manage your personal booze inventory.*
 
-Could also have a "Drunk Mode" where you can just click on huge buttons with what's been used lately.
-Maybe also a drunk test that asks math questions to determine if you should really have another shot.
+Liquor Cabinet is currently in Alpha, and may break, or just plain not work.
+It _shouldn't_ eat your data, but as usual there are no guarantees.
 
-Normal and Party Mode.
-Normal is 1oz portions, party is by 4oz.
-Larger portions in party mode.
+## Installing ##
 
-We can use http://demo.vmspython.org/pyhtmldoc/sympy.physics.units.html to convert units.
+### Windows ###
+You will need to download the following dependencies before you'll be 
+able to use Liquor Cabinet:
 
-The "drink" part is just a shortcut for a group of ingredients and how much.
+*   [Python 2.7](http://python.org/ftp/python/2.7.1/python-2.7.1.msi)
+*   [PyQt4](http://www.riverbankcomputing.co.uk/static/Downloads/PyQt4/PyQt-Py2.7-gpl-4.8.1-1.exe)
 
-Should have a splash screen on first run, as well as bringing the gui up by default.
-Should also die when ctrl+c'd
+A proper installer will be a goal for beta.
 
-Actions:
-    Add:
-        Add Ingredient
-        Add Drink
-    Inventory:
-        Add
-        Subtract
-    Information:
-        Shopping List
-        Alcohol Intake
-        What Can I Make
+### Linux ###
+Long story short, you should already have Python, and only need PyQt4, 
+which should be in your distribution's repositories.
 
-Money Making Scheme:
-There's the open source version, and then the Premium version.
-The Premium version has the nagging about having too much to drink optionally disabled.
-It also keeps track of who paid for it and shows so in the about window.
-Premium users also get Premium support (direct email line with me.)
-Open Source users get "community support" (still me.)
-Premium users also get put in the credits as supporters if they want.
-The Premium version is still GPL'd.
+### Mac ###
+I dont have any Macs available to test, so you're encouraged to give it the ol' college try.
+You should only need PyQt4 which might be in Fink or Macports or 
+whatever package manager it is you Mac people use.
 
-Kegbot integration
+## Running ##
+Windows users can double-click `liquor_cabinet.bat` to launch the program.
+You might need to edit it (right click, edit) to adjust your python path.
 
+Other users will need to run `python guiclient.py` from a terminal, preferably from within its directory.
 
+You'll notice a window and an icon in your system tray.
+Closing the window will simply hide it, clicking the icon in your system tray will re-show the window.
+Right clicking the icon will show a menu with which you can do most things with the program.
 
+Your data is saved in `database.py` when you exit the program, and every few minutes while it runs.
+If you're worried about new versions eating your data, make a backup regularly.
 
+## Contributing ##
+If you'd like to contribute to the project, send an email to [C Nelson](https://github.com/cnelsonsic)
+and we'll think of something for you to do.
+
+The #1 thing right now is making the GUI more featureful, specifically 
+with respect to the predictive parts of the application.
+
+The #2 thing is adding useful default data. 
+This is mostly in the form of popular products and product information.
+
+If you still have no ideas for things to do, there are several "TODO"s 
+that would be nice to have completed.
+
+## Copyright ##
+    Liquor Cabinet Copyright (C)  2010  C Nelson
+    This program comes with ABSOLUTELY NO WARRANTY; for details see the LICENSE file.
+    This is free software, and you are welcome to redistribute it
+    under certain conditions; see the LICENSE file for details.
 
