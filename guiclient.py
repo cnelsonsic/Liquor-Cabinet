@@ -27,7 +27,6 @@ from graph_interpolation import extrapolate_to_y_zero_linear
     #Allow multiple selections
     #Export to CSV for graphing in external applications
     
-
 class HTMLPrinter(QtWebKit.QWebView):
     def __init__(self, html="", parent=None):
         QtWebKit.QWebView.__init__(self, parent)
@@ -301,78 +300,6 @@ class TimeSetDialog(QDialog):
         d = datetime.datetime.now()
         t = self.timeEdit.time().toPyTime()
         return d.replace(hour=t.hour, minute=t.minute)
-
-class MainWindow(QtGui.QWidget):
-    def __init__(self, win_parent = None):
-        #Init the base class
-        QtGui.QWidget.__init__(self, win_parent)
-        
-        traySignal = "activated(QSystemTrayIcon::ActivationReason)"
-        global trayIcon
-        QtCore.QObject.connect(trayIcon, QtCore.SIGNAL(traySignal), self.__icon_activated)
-        
-        self.okayToClose = False
-        
-        self.create_widgets()
-    
-    def closeEvent(self, event):
-        if self.okayToClose: 
-            #user asked for exit
-            event.accept()
-        else:
-            #"minimize"
-            self.hide()
-            event.ignore()
-    
-    def __icon_activated(self, reason):
-        if reason in (QtGui.QSystemTrayIcon.Trigger, QtGui.QSystemTrayIcon.DoubleClick):
-            if self.isVisible():
-                self.hide()
-            elif not self.isVisible():
-                self.show()
-
-    def create_widgets(self):
-        h_box = QtGui.QHBoxLayout()
-        self.setLayout(h_box)
-        
-        self.tabs = QtGui.QTabWidget()
-        self.tabs.setUsesScrollButtons(False)
-        h_box.addWidget(self.tabs)
-        
-        #Some quick statistics in large font: (Current estimated BAC, other stats.  
-        #warnings about things that are due to go out of stock
-        self.homepage = QtGui.QWidget()
-        self.homepage.setLayout(QtGui.QHBoxLayout())
-        self.tabs.addTab(self.homepage, "Home")
-        
-        #The IngredientsEditor widget
-        self.ingredients_tab = QtGui.QWidget()
-        self.ingredients_tab.setLayout(QtGui.QHBoxLayout())
-        self.tabs.addTab(self.ingredients_tab, "Ingredients")
-        self.ingredients_tab.layout().addWidget(IngredientsEditor())
-        
-        #The ShoppingList widget
-        self.shoppinglist = QtGui.QWidget()
-        self.shoppinglist.setLayout(QtGui.QHBoxLayout())
-        self.tabs.addTab(self.shoppinglist, "Shopping List")
-        self.shoppinglist.layout().addWidget(ShoppingList())
-        
-        #The StatisticsViewer widget
-        self.statistics = QtGui.QWidget()
-        self.statistics.setLayout(QtGui.QHBoxLayout())
-        self.tabs.addTab(self.statistics, "Statistics")
-        
-        '''#Build our main window:
-            #Build our ingredient adding/modification interface
-            #Build Statistics page
-                #Show popular ingredient inventory amount over time graph
-                #Show amount drank over time graph for each ingredient
-                #BAC over time.
-                #When can we drink according to social standards
-            #Build Inventory management page
-                #List our available ingredients, double click to edit the Ingredient itself
-                #Show non-editable info and a dropdown of volumes 
-                '''
 
 class ShoppingList(QtGui.QWidget):
     '''This widget looks at the current inventory and displays a list of Ingredients
@@ -735,6 +662,77 @@ class IngredientsEditor(QtGui.QWidget):
         except(AttributeError):
             pass
         
+class MainWindow(QtGui.QWidget):
+    def __init__(self, win_parent = None):
+        #Init the base class
+        QtGui.QWidget.__init__(self, win_parent)
+        
+        traySignal = "activated(QSystemTrayIcon::ActivationReason)"
+        global trayIcon
+        QtCore.QObject.connect(trayIcon, QtCore.SIGNAL(traySignal), self.__icon_activated)
+        
+        self.okayToClose = False
+        
+        self.create_widgets()
+    
+    def closeEvent(self, event):
+        if self.okayToClose: 
+            #user asked for exit
+            event.accept()
+        else:
+            #"minimize"
+            self.hide()
+            event.ignore()
+    
+    def __icon_activated(self, reason):
+        if reason in (QtGui.QSystemTrayIcon.Trigger, QtGui.QSystemTrayIcon.DoubleClick):
+            if self.isVisible():
+                self.hide()
+            elif not self.isVisible():
+                self.show()
+
+    def create_widgets(self):
+        h_box = QtGui.QHBoxLayout()
+        self.setLayout(h_box)
+        
+        self.tabs = QtGui.QTabWidget()
+        self.tabs.setUsesScrollButtons(False)
+        h_box.addWidget(self.tabs)
+        
+        #Some quick statistics in large font: (Current estimated BAC, other stats.  
+        #warnings about things that are due to go out of stock
+        self.homepage = QtGui.QWidget()
+        self.homepage.setLayout(QtGui.QHBoxLayout())
+        self.tabs.addTab(self.homepage, "Home")
+        
+        #The IngredientsEditor widget
+        self.ingredients_tab = QtGui.QWidget()
+        self.ingredients_tab.setLayout(QtGui.QHBoxLayout())
+        self.tabs.addTab(self.ingredients_tab, "Ingredients")
+        self.ingredients_tab.layout().addWidget(IngredientsEditor())
+        
+        #The ShoppingList widget
+        self.shoppinglist = QtGui.QWidget()
+        self.shoppinglist.setLayout(QtGui.QHBoxLayout())
+        self.tabs.addTab(self.shoppinglist, "Shopping List")
+        self.shoppinglist.layout().addWidget(ShoppingList())
+        
+        #The StatisticsViewer widget
+        self.statistics = QtGui.QWidget()
+        self.statistics.setLayout(QtGui.QHBoxLayout())
+        self.tabs.addTab(self.statistics, "Statistics")
+        
+        '''#Build our main window:
+            #Build our ingredient adding/modification interface
+            #Build Statistics page
+                #Show popular ingredient inventory amount over time graph
+                #Show amount drank over time graph for each ingredient
+                #BAC over time.
+                #When can we drink according to social standards
+            #Build Inventory management page
+                #List our available ingredients, double click to edit the Ingredient itself
+                #Show non-editable info and a dropdown of volumes 
+                '''
 
 def main():
     signal.signal(signal.SIGINT, signal.SIG_DFL)
