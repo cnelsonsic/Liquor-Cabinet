@@ -65,13 +65,18 @@ class BaseClient(object):
     
     def import_dump(self, filename="database.py"):
         import imp
-        database = imp.load_source('baseclient', filename)
-        a = 0
-        for item in database.ITEMS:
-            self.try_add(item)
-            a += 1
-        print "Imported %d items." % a
-        return a
+        if os.path.exists(filename):
+            database = imp.load_source('baseclient', filename)
+            a = 0
+            for item in database.ITEMS:
+                self.try_add(item)
+                a += 1
+            print "Imported %d items." % a
+            return a
+        else:
+            print "Could not import the old database, no worries."
+            return False
+        
         
     def commit(self):
         return self.session.commit()
