@@ -26,8 +26,13 @@ from graph_interpolation import extrapolate_to_y_zero_linear
 #Charts that graph drinking of an ingredient over time.
     #Allow multiple selections
     #Export to CSV for graphing in external applications
-    
+
 class HTMLPrinter(QtWebKit.QWebView):
+    '''HTMLPrinter is a handy widget that prints whatever `html` given.
+    It applies the stylesheet named 'style.css' in the liquor cabinet 
+    resources directory.
+    When finished loading, it will show a QPrintPreviewDialog. 
+    ''' 
     def __init__(self, html="", parent=None):
         QtWebKit.QWebView.__init__(self, parent)
         self.setHtml(html, QtCore.QUrl("qrc://"))
@@ -43,7 +48,7 @@ class HTMLPrinter(QtWebKit.QWebView):
         self.preview.exec_()
         
 class GraphViewer(QtWebKit.QWebView):
-    '''This shows an interable's data as a gRaphael svg element.
+    '''This shows an iterable's data as a gRaphael svg element.
     Pass a list or tuple as x and y to graph those points.
     Past a list or tuple of tuples or lists to x and y and it 
     will graph multiple lines!
@@ -77,21 +82,50 @@ class GraphViewer(QtWebKit.QWebView):
         frame.evaluateJavaScript("if(ready == true) {generate_graph(%s, %s);}" % (x, y))
 
 class SystemTrayIcon(QtGui.QSystemTrayIcon):
-    '''System Tray Right-Click menu will look like:
+    '''SystemTrayIcon is a quick-access method of entering small 
+    amounts of drinking/purchasing data.
+    Left-Clicking this icon in the system tray will hide or show
+    the MainWindow. 
+    Right-clicking will show a context menu.
+    
+    There is a 'time until drinking is socially acceptible' timer as well,
+    which, given the time you woke up that day can calculate when it is
+    socially acceptable to begin drinking.
+    Remember, if you're watching the clock for when you can drink,
+    you may need to seek help with your addiction.
+    
+    The context menu will resemble:
         Exit
+        ----
+        You can drink after XX:XX:XX PM>
+            I just woke up.
+            I woke up earlier...
         ----
         New>
             Ingredient
             Drink
+        ----
         Inventory>
             Vodka>
+                Buy
+                Drink
+        Drink>
+            Vodka Neat>
                 Buy
                 Drink
         ----
         Vodka>
             Buy
             Drink
+        ----
+        Vodka Neat>
+            Buy
+            Drink
+            
     '''
+    
+    doNewIngredient = QtCore.pyqtSignal()
+    
     def __init__(self, icon, parent=None):
         QtGui.QSystemTrayIcon.__init__(self, icon, parent)
         
@@ -120,7 +154,7 @@ class SystemTrayIcon(QtGui.QSystemTrayIcon):
                 functools.partial(self.menu.addSeparator),
                 functools.partial(self._init_time, self.menu),
                 functools.partial(self.menu.addSeparator),
-                #functools.partial(self._init_new, self.menu),
+                functools.partial(self._init_new, self.menu),
                 functools.partial(self._init_inventory, self.menu),
                 ]
 
@@ -226,11 +260,19 @@ class SystemTrayIcon(QtGui.QSystemTrayIcon):
         print(value)
         
     def do_new_ingredient(self):
-        self.showMessage("Not Implemented", "Adding ingredients arent supported yet. Edit defaults.py with a text editor to add new ingredients until then.")
+        #TODO: Show the main window, and move to the "Ingredients" tab, 
+        #and call add_new_ingredient on the IngredientEditor there.
+        self.doNewIngredient.emit()
+        
+        #self.ie = IngredientsEditor()
+        #self.ie.add_new_ingredient()
+        #self.ie.show()
+        
+        #self.showMessage("Not Implemented", "Adding ingredients arent supported yet. Edit defaults.py with a text editor to add new ingredients until then.")
         print("New Ingredient")
         
     def do_new_drink(self):
-        self.showMessage("Not Implemented", "Adding drinks arent supported yet.")
+        self.showMessage("Not Implemented", "Adding drinks arent supported yet, sorry :(")
         print("New Drink")
         
     def do_buy(self, ingredient, amount):
@@ -603,6 +645,8 @@ class IngredientsEditor(QtGui.QWidget):
         self.editing = False
         
         self.update_listwidget()
+        
+        trayIcon.doNewIngredient.connect(self.add_new_ingredient)
     
     def add_new_ingredient(self):
         i = models.Ingredient('New Ingredient', '', 0)
@@ -667,10 +711,16 @@ class MainWindow(QtGui.QWidget):
         #Init the base class
         QtGui.QWidget.__init__(self, win_parent)
         
-        traySignal = "activated(QSystemTrayIcon::ActivationReason)"
-        global trayIcon
-        QtCore.QObject.connect(trayIcon, QtCore.SIGNAL(traySignal), self.__icon_activated)
-        
+        try:
+            global trayIcon
+            if trayIcon:
+                trayIcon.activated.connect(self.__icon_activated)
+                trayIcon.doNewIngredient.connect(self.show)
+        except(NameError):
+            pass
+        except(AttributeError), err:
+            print err
+                                         
         self.okayToClose = False
         
         self.create_widgets()
@@ -702,6 +752,7 @@ class MainWindow(QtGui.QWidget):
         #Some quick statistics in large font
         #Current estimated BAC
         #Estimated time remaining until sober
+        #Estimated time until it's socially acceptable to drink (If not already drinking)
         #Top 6 Ingredients/size combos as huge buttons
         #3 Most Popular things that are about to go out of stock.
         self.homepage = QtGui.QWidget()
@@ -714,6 +765,11 @@ class MainWindow(QtGui.QWidget):
         self.tabs.addTab(self.ingredients_tab, "Ingredients")
         self.ingredients_tab.layout().addWidget(IngredientsEditor())
         
+        try:
+            trayIcon.doNewIngredient.connect(functools.partial(self.tabs.setCurrentWidget, self.ingredients_tab))
+        except(NameError, AttributeError):
+            pass
+                
         #This tab shows a calendar widget that lets you add drinks to specific dates
         self.calendar_tab = QtGui.QWidget()
         self.calendar_tab.setLayout(QtGui.QHBoxLayout())
@@ -745,6 +801,9 @@ class MainWindow(QtGui.QWidget):
 
 class DrinkCalendar(QtGui.QWidget):
     pass
+
+def print_(x):
+    print x
 
 def main():
     signal.signal(signal.SIGINT, signal.SIG_DFL)
@@ -779,13 +838,11 @@ def main():
 
     app.processEvents()
 
-    w = QtGui.QWidget()
-    
     appIcon = QtGui.QIcon(TRAY_ICON)
     app.setWindowIcon(appIcon)
     
     global trayIcon
-    trayIcon = SystemTrayIcon(appIcon, w)
+    trayIcon = SystemTrayIcon(appIcon)
     trayIcon.show()
     
     #Do our main window.
