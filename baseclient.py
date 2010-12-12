@@ -1,12 +1,13 @@
 '''This is the base classes that allow you to interface with all the innards of the beast.
 ''' 
 
+import json
+import os
+
 import tables
 from models import *
 import defaults
 from settings import *
-
-import json
 
 import sqlalchemy
 from sqlalchemy import create_engine

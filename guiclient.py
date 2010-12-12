@@ -699,8 +699,11 @@ class MainWindow(QtGui.QWidget):
         self.tabs.setUsesScrollButtons(False)
         h_box.addWidget(self.tabs)
         
-        #Some quick statistics in large font: (Current estimated BAC, other stats.  
-        #warnings about things that are due to go out of stock
+        #Some quick statistics in large font
+        #Current estimated BAC
+        #Estimated time remaining until sober
+        #Top 6 Ingredients/size combos as huge buttons
+        #3 Most Popular things that are about to go out of stock.
         self.homepage = QtGui.QWidget()
         self.homepage.setLayout(QtGui.QHBoxLayout())
         self.tabs.addTab(self.homepage, "Home")
@@ -710,6 +713,12 @@ class MainWindow(QtGui.QWidget):
         self.ingredients_tab.setLayout(QtGui.QHBoxLayout())
         self.tabs.addTab(self.ingredients_tab, "Ingredients")
         self.ingredients_tab.layout().addWidget(IngredientsEditor())
+        
+        #This tab shows a calendar widget that lets you add drinks to specific dates
+        self.calendar_tab = QtGui.QWidget()
+        self.calendar_tab.setLayout(QtGui.QHBoxLayout())
+        self.tabs.addTab(self.calendar_tab, "Calendar")
+        self.calendar_tab.layout().addWidget(DrinkCalendar())
         
         #The ShoppingList widget
         self.shoppinglist = QtGui.QWidget()
@@ -733,6 +742,9 @@ class MainWindow(QtGui.QWidget):
                 #List our available ingredients, double click to edit the Ingredient itself
                 #Show non-editable info and a dropdown of volumes 
                 '''
+
+class DrinkCalendar(QtGui.QWidget):
+    pass
 
 def main():
     signal.signal(signal.SIGINT, signal.SIG_DFL)
