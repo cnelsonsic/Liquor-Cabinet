@@ -125,6 +125,7 @@ class SystemTrayIcon(QtGui.QSystemTrayIcon):
     '''
     
     doNewIngredient = QtCore.pyqtSignal()
+    doNewDrink = QtCore.pyqtSignal()
     
     def __init__(self, icon, parent=None):
         QtGui.QSystemTrayIcon.__init__(self, icon, parent)
@@ -260,24 +261,15 @@ class SystemTrayIcon(QtGui.QSystemTrayIcon):
         print(value)
         
     def do_new_ingredient(self):
-        #TODO: Show the main window, and move to the "Ingredients" tab, 
-        #and call add_new_ingredient on the IngredientEditor there.
         self.doNewIngredient.emit()
-        
-        #self.ie = IngredientsEditor()
-        #self.ie.add_new_ingredient()
-        #self.ie.show()
-        
-        #self.showMessage("Not Implemented", "Adding ingredients arent supported yet. Edit defaults.py with a text editor to add new ingredients until then.")
         print("New Ingredient")
         
     def do_new_drink(self):
         self.showMessage("Not Implemented", "Adding drinks arent supported yet, sorry :(")
+        self.doNewDrink.emit()
         print("New Drink")
         
     def do_buy(self, ingredient, amount):
-        ingredient.add_inventory(amount.amount)
-        client.commit()
         print client.buy("", ingredient, amount.amount)
         
         self._regenerate_menus()
@@ -285,8 +277,6 @@ class SystemTrayIcon(QtGui.QSystemTrayIcon):
         self.showMessage("Inventory Added", "Added %s of %s to your stores." % (amount.name, ingredient.name))
         
     def do_drink(self, ingredient, amount):
-        ingredient.remove_inventory(amount.amount)
-        client.commit()
         print client.drink("", ingredient, amount.amount)
         
         self._regenerate_menus()
@@ -304,9 +294,6 @@ class SystemTrayIcon(QtGui.QSystemTrayIcon):
         self._regenerate_menus()
         
     def do_time_query(self):
-        #If timestamp is True, use now as the time.
-        #If timestamp is None, show a window and ask the user for when they woke up
-        #Then call this function again with the time.
         w = QtGui.QWidget()
         dialog = TimeSetDialog(w)
         dialog.exec_()
@@ -537,7 +524,7 @@ class BottleFullnessGuage(QtGui.QGraphicsView):
         maxmod = size.height()/float(max(self.maximum, 1))
         
         height = size.height()
-        level = height-(self.level*maxmod)
+        level = max(0, height-(self.level*maxmod))
         warn = height-(self.warn*maxmod)
         
         self.liquid.setPos(0,0)
@@ -625,6 +612,8 @@ class IngredientsEditor(QtGui.QWidget):
         
         self.leftcol = QVBoxLayout()
         
+        #TODO: Use a QSplitter to let people resize their things.
+        
         self.listwidget = QtGui.QListWidget()
         self.listwidget.setFixedWidth(self.width()/3.0)
         self.leftcol.addWidget(self.listwidget)
@@ -706,6 +695,108 @@ class IngredientsEditor(QtGui.QWidget):
         except(AttributeError):
             pass
         
+class CountDown(QtGui.QLabel):
+    secondTick = QtCore.pyqtSignal()
+    def __init__(self, countdowntime, starttime=None, parent=None):
+        '''`countdowntime` should be a datetime object.'''
+        QtGui.QLabel.__init__(self, parent)
+        
+        self.setStyleSheet("QLabel {font-size:50pt; text-align: center;}")
+        
+        f = self.font()
+        #f.setLetterSpacing(QtGui.QFont.AbsoluteSpacing, -20)
+        self.setFont(f)
+        
+        if starttime is None:
+            starttime = datetime.datetime.now()
+            
+        self.starttime = starttime
+        self.countdowntime = countdowntime
+        
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_countdown)
+        self.timer.start(1000)
+        
+        self.update_countdown()
+    
+    def update_countdown(self):
+        self.countdowntime -= datetime.timedelta(seconds=1)
+        
+        time = self.countdowntime-self.starttime
+        
+        hour = time.seconds/60/60
+        minute = time.seconds/60 % 60
+        second = time.seconds % 60
+        #text = ("<pre>%.2d:%.2d</pre>" % (hour, minute))
+        #text = ("%.2d:%.2d" % (hour, minute))
+        text = ("%.2d:%.2d:%.2d" % (hour, minute, second))
+        #if (second % 2) == 0:
+            #text = text.replace(":", " ")
+        self.setText(text)
+
+class UpdatingBACLabel(QtGui.QLabel):
+    def __init__(self, parent=None):
+        QtGui.QLabel.__init__(self, parent)
+        
+
+class HomePage(QtGui.QWidget):
+    def __init__(self, parent=None):
+        QtGui.QWidget.__init__(self, parent)
+        self.setLayout(QtGui.QVBoxLayout())
+        
+        self.bigstats = QtGui.QHBoxLayout()
+        self.layout().addLayout(self.bigstats)
+        
+        #Current estimated BAC
+        baclayout = QtGui.QVBoxLayout()
+        self.bigstats.addLayout(baclayout)
+        
+        baclayout.addWidget(QtGui.QLabel("Estimated BAC"))
+        
+        currentbac = client.get_bac_simple()
+        self.bac = QtGui.QLabel("%.2f" % currentbac)
+        self.bac.setStyleSheet("QLabel {font-size:100pt; text-align: center;}")
+        baclayout.addWidget(self.bac)
+        #self.bac.showEvent.connect(self.update_bac)
+        
+        #Our conditional timers
+        drinktimerlayout = QtGui.QVBoxLayout()
+        self.bigstats.addLayout(drinktimerlayout)
+        
+        if currentbac > 0:
+            #Estimated time remaining until sober
+            drinktimerlayout.addWidget(QtGui.QLabel("Time til sober(ish):"))
+            absorpsec = 0.05/60.0/60.0
+            s = currentbac/absorpsec
+            delta = datetime.timedelta(seconds=s)
+            target = datetime.datetime.now()+delta
+            drinktimerlayout.addWidget(CountDown(target))
+        else:
+            #Estimated time until it's socially acceptable to drink
+            drinktimerlayout.addWidget(QtGui.QLabel("Booze o' Clock:"))
+            
+            wakeup_time = client.get_latest_wakeup()
+            drinktime = (wakeup_time+datetime.timedelta(hours=DRUNK_BEFORE_NOON))
+            drinktimerlayout.addWidget(CountDown(drinktime, wakeup_time))
+        
+        self.popingreds = QtGui.QHBoxLayout()
+        self.layout().addLayout(self.popingreds)
+        #Top 6 Ingredients/size combos as huge buttons
+        
+        self.poplow = QtGui.QHBoxLayout()
+        self.layout().addLayout(self.poplow)
+        #3 Most Popular things that are about to go out of stock.
+        
+    def showEvent(self, ev):
+        currentbac = client.get_bac_simple()
+        self.bac.setText("%.2f" % currentbac)
+        print "showing"
+        ev.ignore()
+        
+
+class DrinkCalendar(QtGui.QWidget):
+    pass
+
 class MainWindow(QtGui.QWidget):
     def __init__(self, win_parent = None):
         #Init the base class
@@ -750,21 +841,16 @@ class MainWindow(QtGui.QWidget):
         h_box.addWidget(self.tabs)
         
         #Some quick statistics in large font
-        #Current estimated BAC
-        #Estimated time remaining until sober
-        #Estimated time until it's socially acceptable to drink (If not already drinking)
-        #Top 6 Ingredients/size combos as huge buttons
-        #3 Most Popular things that are about to go out of stock.
         self.homepage = QtGui.QWidget()
         self.homepage.setLayout(QtGui.QHBoxLayout())
         self.tabs.addTab(self.homepage, "Home")
+        self.homepage.layout().addWidget(HomePage())
         
         #The IngredientsEditor widget
         self.ingredients_tab = QtGui.QWidget()
         self.ingredients_tab.setLayout(QtGui.QHBoxLayout())
         self.tabs.addTab(self.ingredients_tab, "Ingredients")
         self.ingredients_tab.layout().addWidget(IngredientsEditor())
-        
         try:
             trayIcon.doNewIngredient.connect(functools.partial(self.tabs.setCurrentWidget, self.ingredients_tab))
         except(NameError, AttributeError):
@@ -798,12 +884,6 @@ class MainWindow(QtGui.QWidget):
                 #List our available ingredients, double click to edit the Ingredient itself
                 #Show non-editable info and a dropdown of volumes 
                 '''
-
-class DrinkCalendar(QtGui.QWidget):
-    pass
-
-def print_(x):
-    print x
 
 def main():
     signal.signal(signal.SIGINT, signal.SIG_DFL)
