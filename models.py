@@ -50,13 +50,14 @@ class Ingredient(Base):
 
     def __repr__(self):
         return "Ingredient(name=%s, barcode=%s, size=%d, current_amount=%d, threshold=%d, \
-note=%s, amount_used=%d, id=%d)" % (repr(self.name), 
+note=%s, amount_used=%d, potency=%d, id=%d)" % (repr(self.name), 
                                     repr(self.barcode), 
                                     self.size, 
                                     self.current_amount, 
                                     self.threshold, 
                                     repr(self.note), 
                                     self.amount_used, 
+                                    self.potency,
                                     self.id)
         
     def add_inventory(self, amount):
