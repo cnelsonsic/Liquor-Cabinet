@@ -3,6 +3,7 @@
 
 import json
 import os
+from datetime import timedelta
 
 import tables
 from models import *
@@ -120,6 +121,7 @@ class BaseClient(object):
         print(repr(l))
         l = eval(repr(l))
         self.try_add(l)
+        self.commit()
         
         if type(log_type) is int:
             log_type = [k for k, v in Log.TYPES.iteritems() if v == log_type][0]
@@ -132,16 +134,24 @@ class BaseClient(object):
         
     def debug(self, message): 
         return self.log(Log.TYPES['DEBUG'], message)
+    
     def info(self, message): 
         return self.log(Log.TYPES['INFO'], message)
+    
     def warning(self, message): 
         return self.log(Log.TYPES['WARNING'], message)
+    
     def error(self, message): 
         return self.log(Log.TYPES['ERROR'], message)
+    
     def drink(self, message, drink, amount):
+        drink.remove_inventory(amount)
         return self.log(Log.TYPES['DRINK'], message, drink, amount)
-    def buy(self, message, drink, amount): 
+    
+    def buy(self, message, drink, amount):
+        drink.add_inventory(amount)
         return self.log(Log.TYPES['BUY'], message, drink, amount)
+    
     def wakeup(self, message='', timestamp=None):
         return self.log(Log.TYPES['WAKEUP'], message, date=timestamp)
 
@@ -154,7 +164,56 @@ class BaseClient(object):
         q = q.filter(Ingredient.current_amount <= Ingredient.threshold).order_by(Ingredient.amount_used).all()
         
         return q
+    
+    def get_bac_simple(self, hours=24):
+        '''Gets the user's estimated BAC, using a very simple formula, 
+        and not taking into account, sex, weight or height.
+        Uses the last `hours` worth of drinks.
+        '''
+        tempbac = 0
+        
+        #Get all the drinks in the past 24 hours.
+        drinks = []
+        hoursdelta = timedelta(hours=hours)
+        q = self.session.query(Log).filter(Log.log_type == Log.TYPES['DRINK'])
+        q = q.filter(Log.date>(datetime.datetime.now()-hoursdelta)).order_by(Log.date)
+        drinks = q.all()
+        
+        if drinks == []:
+            return 0
+        
+        seconds = (datetime.datetime.now()-drinks[0].date).seconds
+        
+        #22.5 mL of pure alcohol raises bac by 0.025
+        #multiply potency by 100
+        #multiply amount by potency
+        #result is amount of pure alcohol.
+        #Each mL of pure alcohol raises bac by 0.0011111
+        bacperml = 0.025/22.5
+        
+        for i in drinks:
+            ingr = self.session.query(Ingredient).filter(Ingredient.id==int(i.drink)).all()[0]
+            amtpurealc = (ingr.potency/100.0)*i.amount
+            #Add them to the temporary bac
+            tempbac += (amtpurealc*bacperml)
+        
+        #print "BAC before absorption: %.4f" % tempbac
+        #remove 0.05 for every hour
+        #or 0.05/60/60 for every second.
+        absorpsec = 0.05/60.0/60.0
+        #print "Absorbed %f" % (absorpsec*seconds)
+        tempbac -= (absorpsec*seconds)
+        #print "Final BAC is %.4f" % tempbac
+        return max(0, tempbac)
 
+    def get_latest_wakeup(self):
+        q = self.session.query(Log).filter(Log.log_type==Log.TYPES['WAKEUP']).order_by(Log.date).first()
+        if q is None:
+            q = datetime.datetime.now()
+        else:
+            q = q.date
+        return q
+        
 if __name__ == "__main__":
     b = BaseClient(path='sqlite:///:memory:', debug=False)
     #~ b = BaseClient(debug=False)
@@ -194,6 +253,15 @@ if __name__ == "__main__":
     b.dump_to_disk()
     b = BaseClient(path='sqlite:///:memory:', debug=False)
     b.import_dump()
+    
+    import time, random
+    for i in xrange(10):
+        b.drink("", vodka_ingredient, 45)
+        #time.sleep(random.random())
+    print b.get_bac_simple()
+    
+    b.wakeup()
+    print b.get_latest_wakeup()
 
 
     
