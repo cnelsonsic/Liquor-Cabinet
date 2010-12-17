@@ -306,6 +306,7 @@ class TimeSetDialog(QDialog):
             
         self.layout=QVBoxLayout(self)
         
+        #TODO: Convert this from QTimeEdit to QDateTimeEdit
         dnow = datetime.datetime.now()
         now = QtCore.QTime(dnow.hour, dnow.minute)
         self.timeEdit = QtGui.QTimeEdit(now)
@@ -321,10 +322,7 @@ class TimeSetDialog(QDialog):
         self.Cancel = QPushButton("Cancel")
         self.connect(self.Cancel, SIGNAL("clicked()"), self.reject)
         hlayout.addWidget(self.Cancel)
-        
-        
 
-        
     def get_time(self):
         d = datetime.datetime.now()
         t = self.timeEdit.time().toPyTime()
@@ -342,21 +340,6 @@ class ShoppingList(QtGui.QWidget):
         self.tree = QtGui.QTreeWidget()
         self.tree.setColumnCount(4)
         self.tree.setHeaderLabels((u"\u2611", "Name", "Current Amount", "Amount Used", "Barcode"))
-        
-        items = list()
-        emptybox = QtCore.QString(u"\u2610")
-        data = None
-        for ingr in client.get_out_of_stock():
-            item = QTreeWidgetItem(self.tree)
-            data = (emptybox, ingr.name, str(int(ingr.current_amount))+"mL", str(int(ingr.amount_used))+"mL", ingr.barcode)
-            for t in enumerate(data):
-                item.setText(t[0], t[1])
-            items.append(item)
-        self.tree.insertTopLevelItems(0, items)
-        
-        if data:
-            for i in xrange(len(data)):
-                self.tree.resizeColumnToContents(i)
             
         self.print_button = QtGui.QPushButton("Print Shopping List")
         self.connect(self.print_button, SIGNAL("clicked()"), self.print_html)
@@ -369,6 +352,8 @@ class ShoppingList(QtGui.QWidget):
         s = self.tree.frameSize()
         g = self.frameGeometry()
         self.setGeometry(g.x(), g.y(), s.width()/1.5, s.height()/1.5)
+        
+        self.showEvent(None)
         
     def print_html(self):
         rows = []
@@ -384,6 +369,27 @@ class ShoppingList(QtGui.QWidget):
         self.h = HTMLPrinter(html=str(t))
         #self.h.show()
         self.h.do_print(True)
+        
+    def showEvent(self, ev):
+        self.tree.clear()
+        
+        items = list()
+        emptybox = QtCore.QString(u"\u2610")
+        data = None
+        for ingr in client.get_out_of_stock():
+            item = QTreeWidgetItem(self.tree)
+            data = (emptybox, ingr.name, str(int(ingr.current_amount))+"mL", str(int(ingr.amount_used))+"mL", ingr.barcode)
+            for t in enumerate(data):
+                item.setText(t[0], t[1])
+            items.append(item)
+        self.tree.insertTopLevelItems(0, items)
+        
+        if data:
+            for i in xrange(len(data)):
+                self.tree.resizeColumnToContents(i)
+        
+        if ev is not None:
+            ev.accept()
            
 class PsychicShoppingList(ShoppingList):
     '''This widget looks like the ShoppingList widget, but uses 
@@ -409,7 +415,7 @@ class IngredientEditorPane(QtGui.QWidget):
         
         self.inputs = {}
         
-        self.fields = ('name', 'barcode', 'size', 'current_amount', 'threshold', 'note')
+        self.fields = ('name', 'barcode', 'size', 'current_amount', 'threshold', 'potency', 'note')
         
         for a in self.fields:
             value = getattr(ingredient, a)
@@ -422,6 +428,10 @@ class IngredientEditorPane(QtGui.QWidget):
                 i.setRange(0, 10000)
                 i.setSuffix(" mL")
                 i.setValue(value)
+                
+            if a == "potency":
+                i.setDecimals(2)
+                i.setSuffix("%")
             
             label = a.replace("_", " ").title()+":"
             formlayout.addRow(label, i)
@@ -454,6 +464,11 @@ class IngredientEditorPane(QtGui.QWidget):
                 
         client.commit()
         client.dump_to_disk()
+        
+        try:
+            trayIcon._regenerate_menus()
+        except:
+            pass
         
 class BottleFullnessGuage(QtGui.QGraphicsView):
     '''Draw a thermometer style image that shows the level of a statistic
@@ -527,10 +542,10 @@ class BottleFullnessGuage(QtGui.QGraphicsView):
         level = max(0, height-(self.level*maxmod))
         warn = height-(self.warn*maxmod)
         
-        self.liquid.setPos(0,0)
+        self.liquid.setPos(0, 0)
         self.liquid.moveBy(0, level)
         
-        self.caution.setPos(0,0)
+        self.caution.setPos(0, 0)
         self.caution.moveBy(0, warn)
         
         centerx = size.width()/3.75
@@ -704,7 +719,6 @@ class CountDown(QtGui.QLabel):
         self.setStyleSheet("QLabel {font-size:50pt; text-align: center;}")
         
         f = self.font()
-        #f.setLetterSpacing(QtGui.QFont.AbsoluteSpacing, -20)
         self.setFont(f)
         
         if starttime is None:
@@ -735,10 +749,20 @@ class CountDown(QtGui.QLabel):
         self.setText(text)
 
 class UpdatingBACLabel(QtGui.QLabel):
-    def __init__(self, parent=None):
+    def __init__(self, frequency=5000, parent=None):
         QtGui.QLabel.__init__(self, parent)
         
-
+        self.setStyleSheet("font-size:100pt; text-align: center;")
+        
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_text)
+        self.timer.start(frequency)
+        
+    def update_text(self):
+        if self.isVisible():
+            currentbac = client.get_bac_simple()
+            self.setText("%.2f" % currentbac)
+        
 class HomePage(QtGui.QWidget):
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
@@ -750,50 +774,98 @@ class HomePage(QtGui.QWidget):
         #Current estimated BAC
         baclayout = QtGui.QVBoxLayout()
         self.bigstats.addLayout(baclayout)
-        
         baclayout.addWidget(QtGui.QLabel("Estimated BAC"))
-        
-        currentbac = client.get_bac_simple()
-        self.bac = QtGui.QLabel("%.2f" % currentbac)
-        self.bac.setStyleSheet("QLabel {font-size:100pt; text-align: center;}")
+        self.bac = UpdatingBACLabel()
         baclayout.addWidget(self.bac)
-        #self.bac.showEvent.connect(self.update_bac)
         
-        #Our conditional timers
-        drinktimerlayout = QtGui.QVBoxLayout()
-        self.bigstats.addLayout(drinktimerlayout)
+        #Countdown timer for time til sober and time til happy hour
+        #These are (re)built on show.
+        self.drinktimerlayout = None
+        self.countdown = None
+        self.drinktimerlabel = None
+        self._build_countdowns()
+        
+        #Top 6 Ingredients/size combos as huge buttons
+        self.popingreds = QtGui.QHBoxLayout()
+        self.layout().addLayout(self.popingreds)
+        numbuttons = 0
+        for i in client.get_popular_ingredients(4):
+            d = client.get_common_drink_amounts(i)
+            
+            if len(d) == 0:
+                continue
+            
+            top = 0
+            topkey = ""
+            print d
+            for k,v in d.iteritems():
+                if v > top:
+                    top = v
+                    topkey = k
+                    
+            words = []
+            length = 0
+            for t in i.name.split(" "):
+                if length+len(t) > 15:
+                    words.append(("\n"))
+                words.append(t)
+                length += len(t)
+                    
+            tempbutton = QtGui.QPushButton("%s \n(%s/%dmL)" % (' '.join(words), topkey.name, topkey.amount))
+            tempbutton.setStyleSheet("font-size:20pt; text-align: center;")
+            #TODO:connect
+            self.popingreds.addWidget(tempbutton)
+            numbuttons += 1
+        for i in xrange(4-numbuttons):
+            tempbutton = QtGui.QPushButton("Nothing \n(Zip/0mL)")
+            tempbutton.setStyleSheet("font-size:20pt; text-align: center;")
+            self.popingreds.addWidget(tempbutton)
+        
+        #3 Most Popular things that are about to go out of stock.
+        self.poplow = QtGui.QHBoxLayout()
+        self.layout().addLayout(self.poplow)
+        
+        
+    def _build_countdowns(self):
+        if self.drinktimerlayout is not None:
+            self.bigstats.removeItem(self.drinktimerlayout)
+            
+        for w in (self.countdown, self.drinktimerlabel):
+            if w is not None:
+                w.setParent(None)
+            
+        currentbac = client.get_bac_simple()
+        
+        self.drinktimerlayout = QtGui.QVBoxLayout()
+        self.bigstats.addLayout(self.drinktimerlayout)
         
         if currentbac > 0:
             #Estimated time remaining until sober
-            drinktimerlayout.addWidget(QtGui.QLabel("Time til sober(ish):"))
+            self.drinktimerlabel = QtGui.QLabel("Time til sober(ish):")
+            self.drinktimerlayout.addWidget(self.drinktimerlabel)
             absorpsec = 0.05/60.0/60.0
             s = currentbac/absorpsec
             delta = datetime.timedelta(seconds=s)
             target = datetime.datetime.now()+delta
-            drinktimerlayout.addWidget(CountDown(target))
+            self.countdown = CountDown(target)
         else:
             #Estimated time until it's socially acceptable to drink
-            drinktimerlayout.addWidget(QtGui.QLabel("Booze o' Clock:"))
-            
+            self.drinktimerlabel = QtGui.QLabel("Booze o' Clock:")
+            self.drinktimerlayout.addWidget(self.drinktimerlabel)
             wakeup_time = client.get_latest_wakeup()
             drinktime = (wakeup_time+datetime.timedelta(hours=DRUNK_BEFORE_NOON))
-            drinktimerlayout.addWidget(CountDown(drinktime, wakeup_time))
-        
-        self.popingreds = QtGui.QHBoxLayout()
-        self.layout().addLayout(self.popingreds)
-        #Top 6 Ingredients/size combos as huge buttons
-        
-        self.poplow = QtGui.QHBoxLayout()
-        self.layout().addLayout(self.poplow)
-        #3 Most Popular things that are about to go out of stock.
-        
+            self.countdown = CountDown(drinktime, wakeup_time)
+            
+        self.drinktimerlayout.addWidget(self.countdown)
+            
+    
     def showEvent(self, ev):
-        currentbac = client.get_bac_simple()
-        self.bac.setText("%.2f" % currentbac)
-        print "showing"
+        self.bac.update_text()
+
+        self._build_countdowns()
+        
         ev.ignore()
         
-
 class DrinkCalendar(QtGui.QWidget):
     pass
 
@@ -885,6 +957,14 @@ class MainWindow(QtGui.QWidget):
                 #Show non-editable info and a dropdown of volumes 
                 '''
 
+def safe_client_dump(filename="database.py"):
+    try:
+        #client.dump_to_disk("test_diskspace_file.tmp")
+        return client.dump_to_disk(filename)
+    except(IOError), err:
+        trayIcon.showMessage("Unable to write database to disk.", str(err))
+        return err
+
 def main():
     signal.signal(signal.SIGINT, signal.SIG_DFL)
     global app
@@ -964,7 +1044,7 @@ def main():
     app.setQuitOnLastWindowClosed(False)
     
     savetimer = QTimer()
-    savetimer.connect(savetimer, SIGNAL("timeout()"), functools.partial(client.dump_to_disk))
+    savetimer.connect(savetimer, SIGNAL("timeout()"), functools.partial(safe_client_dump, DATABASE_FILENAME))
     
     length = 0
     for i in (client.get_ingredients(), client.get_amounts(), client.session.query(models.Log).all()):
@@ -974,9 +1054,11 @@ def main():
     savetimer.start(WRITE_DATA_DELAY*delaymod)
     print "Automatically saving every %.2f minutes" % (((((WRITE_DATA_DELAY*delaymod)/1000.0)/60.0)))
 
+    safe_client_dump(DATABASE_FILENAME)
+
     rval = app.exec_()
     
-    client.dump_to_disk()
+    safe_client_dump(DATABASE_FILENAME)
     
     sys.exit(rval)
 
