@@ -73,7 +73,7 @@ class BaseClient(object):
         fdata += ")\n"
         
         try:
-            file("test_diskspace_file.tmp", 'a').write(fdata)
+            file("test_diskspace_file.tmp", 'a').write(fdata+data)
             os.unlink("test_diskspace_file.tmp")
         except(IOError), err:
             raise err
