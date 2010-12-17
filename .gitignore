@@ -2,3 +2,4 @@
 liquor_cabinet.sqlite
 dist/
 database.py
+database_backups/*.gz

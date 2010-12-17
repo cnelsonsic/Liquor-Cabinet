@@ -25,6 +25,7 @@ DATABASE_PATH = "sqlite:///:memory:"
 #Database Filename is the name of the python file we'll write to every so often and read in on startup.
 #This gives us free forwards compatibility, plus a (mostly) human readable database file.
 DATABASE_FILENAME = "database.py"
+DATABASE_BACKUP_DIR = "database_backups/"
 
 DEBUG = False
 
