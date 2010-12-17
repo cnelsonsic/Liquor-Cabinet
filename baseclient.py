@@ -50,20 +50,34 @@ class BaseClient(object):
             self.session.commit()
         
     def dump_to_disk(self, filename="database.py"):
+        '''Writes the client's database information out to a plaintext python file.
+        It writes it twice, once to confirm that there is enough space for the database file,
+        and then again for the real file.'''
+        
+        fdata = ""
+        fdata += "from models import *\n\n"
+        fdata += "ITEMS = (\n"
+        a = 0
+        for j in (self.get_ingredients(), self.get_amounts(), self.session.query(Log).all()):
+            for i in j:
+                fdata += "\t"
+                fdata += repr(i)
+                fdata += ",\n"
+                a += 1
+            fdata += "\n"
+        fdata += ")\n"
+        
+        try:
+            file("test_diskspace_file.tmp", 'a').write(fdata)
+            os.unlink("test_diskspace_file.tmp")
+        except(IOError), err:
+            raise err
+            
         with open(filename, "w") as f:
-            f.write("from models import *\n\n")
-            f.write("ITEMS = (\n")
-            a = 0
-            for j in (self.get_ingredients(), self.get_amounts(), self.session.query(Log).all()):
-                for i in j:
-                    f.write("\t")
-                    f.write(repr(i))
-                    f.write(",\n")
-                    a += 1
-                f.write("\n")
-            f.write(")\n")
-            print "Wrote %d bytes in %d items." % (f.tell(), a)
-            return f.tell(), a
+            f.write(fdata)
+        
+        print "Wrote %d bytes in %d items." % (len(fdata), a)
+        return len(fdata), a
     
     def import_dump(self, filename="database.py"):
         import imp
@@ -103,6 +117,10 @@ class BaseClient(object):
         q = self.session.query(Amount).filter(Amount.name==name).all()[0]
         return q
     
+    def get_amount_by_size(self, size):
+        q = self.session.query(Amount).filter(Amount.amount==size).all()[0]
+        return q
+    
     def get_popular_drink_amounts(self, limit):
         q = self.session.query(Amount).filter(Amount.times_drank > 0).order_by(Amount.amount).order_by(Amount.times_drank).limit(limit).all()
         return q
@@ -110,6 +128,30 @@ class BaseClient(object):
     def get_popular_buy_amounts(self, limit):
         q = self.session.query(Amount).filter(Amount.times_bought > 0).order_by(Amount.amount).order_by(Amount.times_bought).limit(limit).all()
         return q
+    
+    def get_common_drink_amounts(self, ingredient):
+        '''Parses the log and gets the amounts for each drink and then 
+        returns them sorted by the number of times they appear.
+        '''
+        
+        q = self.session.query(Log)
+        q = q.filter(Log.log_type == Log.TYPES['DRINK'])
+        q = q.filter(Log.drink==ingredient.id)
+        #q = q.order_by(Log.date.desc())
+        #q = q.limit(limit)
+        amts = q.all()
+        
+        named_amounts = [self.get_amount_by_size(a.amount) for a in amts]
+        
+        amnt_dict = {}
+        for n in named_amounts:
+            if n in amnt_dict:
+                amnt_dict.update({n:amnt_dict[n]+1})
+            else:
+                amnt_dict.update({n:1})
+        
+        return amnt_dict
+        
         
     def log(self, log_type, message, drink=None, amount=None, date=None):
         if drink is not None:
@@ -146,10 +188,18 @@ class BaseClient(object):
     
     def drink(self, message, drink, amount):
         drink.remove_inventory(amount)
+        try:
+            self.get_amount_by_size(amount).times_drank += 1
+        except(IndexError):
+            pass
         return self.log(Log.TYPES['DRINK'], message, drink, amount)
     
     def buy(self, message, drink, amount):
         drink.add_inventory(amount)
+        try:
+            self.get_amount_by_size(amount).times_bought += 1
+        except(IndexError):
+            pass
         return self.log(Log.TYPES['BUY'], message, drink, amount)
     
     def wakeup(self, message='', timestamp=None):
@@ -161,7 +211,9 @@ class BaseClient(object):
         #Where the amount is below its threshold
         #Sorted by the amount we've used (popularity)
         q = self.session.query(Ingredient).filter(Ingredient.amount_used > 0)
-        q = q.filter(Ingredient.current_amount <= Ingredient.threshold).order_by(Ingredient.amount_used).all()
+        q = q.filter(Ingredient.threshold > 0)
+        q = q.filter(Ingredient.current_amount <= Ingredient.threshold)
+        q = q.order_by(Ingredient.amount_used).all()
         
         return q
     
@@ -170,17 +222,27 @@ class BaseClient(object):
         and not taking into account, sex, weight or height.
         Uses the last `hours` worth of drinks.
         '''
+        #FIXME: Thinks the user just drank all the drinks in the previous `hours` hours.
+        #Perhaps iterate through all the drinks, sorted by date:
+        #    Add their alcohol to the bac
+        #    Remove the appropriate amount of BAC for each second between the last drink and the current drink.
+        #    Max it at 0.
+        
         tempbac = 0
         
         #Get all the drinks in the past 24 hours.
         drinks = []
         hoursdelta = timedelta(hours=hours)
         q = self.session.query(Log).filter(Log.log_type == Log.TYPES['DRINK'])
-        q = q.filter(Log.date>(datetime.datetime.now()-hoursdelta)).order_by(Log.date)
+        q = q.filter(Log.date>(datetime.datetime.now()-hoursdelta)).order_by(Log.date.desc())
         drinks = q.all()
         
         if drinks == []:
             return 0
+        
+        dates = [d.date for d in drinks]
+        dates.sort()
+        #print dates
         
         seconds = (datetime.datetime.now()-drinks[0].date).seconds
         
@@ -192,6 +254,7 @@ class BaseClient(object):
         bacperml = 0.025/22.5
         
         for i in drinks:
+            #print i.date
             ingr = self.session.query(Ingredient).filter(Ingredient.id==int(i.drink)).all()[0]
             amtpurealc = (ingr.potency/100.0)*i.amount
             #Add them to the temporary bac
@@ -207,11 +270,15 @@ class BaseClient(object):
         return max(0, tempbac)
 
     def get_latest_wakeup(self):
-        q = self.session.query(Log).filter(Log.log_type==Log.TYPES['WAKEUP']).order_by(Log.date).first()
+        q = self.session.query(Log).filter(Log.log_type==Log.TYPES['WAKEUP'])
+        q = q.filter(Log.date>(datetime.datetime.now()-datetime.timedelta(hours=24)))
+        q = q.order_by(Log.date).first()
+        
         if q is None:
             q = datetime.datetime.now()
         else:
             q = q.date
+            
         return q
         
 if __name__ == "__main__":
@@ -263,5 +330,6 @@ if __name__ == "__main__":
     b.wakeup()
     print b.get_latest_wakeup()
 
+    print b.get_common_drink_amounts(vodka_ingredient)
 
     
