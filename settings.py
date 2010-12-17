@@ -17,12 +17,24 @@ RESOURCES_DIR = "resources/"
 TEMPLATE_DIR = RESOURCES_DIR+"templates/"
 
 TRAY_ICON = RESOURCES_DIR+"bottle.png"
+
+#Database Path should be an SQL URI. SQLite is fastest so we use it in memory by default.
+#See http://www.sqlalchemy.org/docs/05/dbengine.html#create-engine-url-arguments to use a different database.
 DATABASE_PATH = "sqlite:///:memory:"
+
+#Database Filename is the name of the python file we'll write to every so often and read in on startup.
+#This gives us free forwards compatibility, plus a (mostly) human readable database file.
+DATABASE_FILENAME = "database.py"
+
 DEBUG = False
-WRITE_DATA_DELAY = 1000*60*5 #Time between writing data to disk In milliseconds
+
+#Time between writing data to disk In milliseconds
+WRITE_DATA_DELAY = 1000*60*5
 
 SPLASH_MESSAGE_DELAY = 0.333
-NOSPLASH = True #Disables splash screen entirely.
+
+#Disables splash screen entirely.
+NOSPLASH = True 
 
 #10 hours past 8am, 6pm
 PURITAN_TIME = 10
