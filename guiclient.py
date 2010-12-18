@@ -415,7 +415,7 @@ class IngredientEditorPane(QtGui.QWidget):
         
         self.inputs = {}
         
-        self.fields = ('name', 'barcode', 'size', 'current_amount', 'threshold', 'potency', 'note')
+        self.fields = ('name', 'barcode', 'size', 'current_amount', 'threshold', 'potency', 'note', 'hidden')
         
         for a in self.fields:
             value = getattr(ingredient, a)
@@ -432,6 +432,10 @@ class IngredientEditorPane(QtGui.QWidget):
             if a == "potency":
                 i.setDecimals(2)
                 i.setSuffix("%")
+                
+            if a == "hidden":
+                i = QtGui.QCheckBox("Hidden from shopping list")
+                i.setChecked(value)
             
             label = a.replace("_", " ").title()+":"
             formlayout.addRow(label, i)
@@ -457,6 +461,11 @@ class IngredientEditorPane(QtGui.QWidget):
                     value = str(i.text())
                 except(AttributeError):
                     pass
+            
+            try:
+                value = i.isChecked()
+            except(AttributeError):
+                pass
             
             if value is not None:
                 label = l.replace(":", "").replace(' ', "_").lower()
@@ -644,6 +653,7 @@ class IngredientsEditor(QtGui.QWidget):
         self.evcontainer.setLayout(QVBoxLayout())
         self.layout().addWidget(self.evcontainer)
         self.evpane = None
+        #TODO: Add a toggle button to hide or show hidden Ingredients.
         self.editbutton = QPushButton("Enable Editing")
         self.editbutton.connect(self.editbutton, SIGNAL("clicked()"), self.toggle_editmode)
         self.editing = False
@@ -675,6 +685,8 @@ class IngredientsEditor(QtGui.QWidget):
         for i in self.ingredients:
             self.ingredict.update({i.name:i})
             newitem = QtGui.QListWidgetItem(i.name)
+            if i.hidden:
+                newitem.setTextColor(Qt.darkGray)
             self.listwidget.addItem(newitem)
             
         items = self.listwidget.findItems(self.last_selection, Qt.MatchExactly)
@@ -716,7 +728,10 @@ class CountDown(QtGui.QLabel):
         '''`countdowntime` should be a datetime object.'''
         QtGui.QLabel.__init__(self, parent)
         
-        self.setStyleSheet("QLabel {font-size:50pt; text-align: center;}")
+        self.setStyleSheet("QLabel {font-size:50pt; }")
+        self.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+        self.setFrameStyle(QtGui.QFrame.Panel | QtGui.QFrame.Raised)
+        self.setSizePolicy(QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding))
         
         f = self.font()
         self.setFont(f)
@@ -752,7 +767,9 @@ class UpdatingBACLabel(QtGui.QLabel):
     def __init__(self, frequency=5000, parent=None):
         QtGui.QLabel.__init__(self, parent)
         
-        self.setStyleSheet("font-size:100pt; text-align: center;")
+        self.setStyleSheet("font-size:100pt;")
+        self.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+        self.setSizePolicy(QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding))
         
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_text)
@@ -774,7 +791,7 @@ class HomePage(QtGui.QWidget):
         #Current estimated BAC
         baclayout = QtGui.QVBoxLayout()
         self.bigstats.addLayout(baclayout)
-        baclayout.addWidget(QtGui.QLabel("Estimated BAC"))
+        baclayout.addWidget(QtGui.QLabel("Estimated BAC:"))
         self.bac = UpdatingBACLabel()
         baclayout.addWidget(self.bac)
         
@@ -786,44 +803,20 @@ class HomePage(QtGui.QWidget):
         self._build_countdowns()
         
         #Top 6 Ingredients/size combos as huge buttons
-        self.popingreds = QtGui.QHBoxLayout()
-        self.layout().addLayout(self.popingreds)
-        numbuttons = 0
-        for i in client.get_popular_ingredients(4):
-            d = client.get_common_drink_amounts(i)
-            
-            if len(d) == 0:
-                continue
-            
-            top = 0
-            topkey = ""
-            print d
-            for k,v in d.iteritems():
-                if v > top:
-                    top = v
-                    topkey = k
-                    
-            words = []
-            length = 0
-            for t in i.name.split(" "):
-                if length+len(t) > 15:
-                    words.append(("\n"))
-                words.append(t)
-                length += len(t)
-                    
-            tempbutton = QtGui.QPushButton("%s \n(%s/%dmL)" % (' '.join(words), topkey.name, topkey.amount))
-            tempbutton.setStyleSheet("font-size:20pt; text-align: center;")
-            #TODO:connect
-            self.popingreds.addWidget(tempbutton)
-            numbuttons += 1
-        for i in xrange(4-numbuttons):
-            tempbutton = QtGui.QPushButton("Nothing \n(Zip/0mL)")
-            tempbutton.setStyleSheet("font-size:20pt; text-align: center;")
-            self.popingreds.addWidget(tempbutton)
+        self.popingreds = None
+        self.ingrbuttons = []
+        self.timers = []
+        self._build_ingr_buttons()
+
+        #Filler buttons
+        #for i in xrange(4-numbuttons):
+            #tempbutton = QtGui.QPushButton("Nothing \n(Zip/0mL)")
+            #tempbutton.setStyleSheet("font-size:20pt; text-align: center;")
+            #self.popingreds.addWidget(tempbutton)
         
         #3 Most Popular things that are about to go out of stock.
-        self.poplow = QtGui.QHBoxLayout()
-        self.layout().addLayout(self.poplow)
+        #self.poplow = QtGui.QHBoxLayout()
+        #self.layout().addLayout(self.poplow)
         
         
     def _build_countdowns(self):
@@ -851,18 +844,70 @@ class HomePage(QtGui.QWidget):
         else:
             #Estimated time until it's socially acceptable to drink
             self.drinktimerlabel = QtGui.QLabel("Booze o' Clock:")
+            
             self.drinktimerlayout.addWidget(self.drinktimerlabel)
             wakeup_time = client.get_latest_wakeup()
             drinktime = (wakeup_time+datetime.timedelta(hours=DRUNK_BEFORE_NOON))
             self.countdown = CountDown(drinktime, wakeup_time)
-            
+        
+        self.drinktimerlabel.setSizePolicy(QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum))
         self.drinktimerlayout.addWidget(self.countdown)
             
+    def _build_ingr_buttons(self):
+        if self.popingreds is not None:
+            self.layout().removeItem(self.popingreds)
+            
+        for b in self.ingrbuttons:
+            b.setParent(None)
+        
+        self.popingreds = QtGui.QHBoxLayout()
+        self.layout().addLayout(self.popingreds)
+        
+        numbuttons = 0
+        for i in client.get_popular_ingredients(4):
+            d = client.get_common_drink_amounts(i)
+            
+            if len(d) == 0:
+                continue
+            
+            top = 0
+            topkey = ""
+            
+            for k,v in d.iteritems():
+                if v > top:
+                    top = v
+                    topkey = k
+                    
+            words = []
+            length = 0
+            for t in i.name.split(" "):
+                if length+len(t) > 15:
+                    words.append(("\n"))
+                    length = 0
+                words.append(t)
+                length += len(t)
+                    
+            tempbutton = QtGui.QPushButton("%s \n(%s/%dmL)" % (' '.join(words), topkey.name, topkey.amount))
+            tempbutton.setSizePolicy(QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding))
+            tempbutton.setStyleSheet("font-size:20pt; text-align: center;")
+            
+            tempbutton.clicked.connect(functools.partial(client.drink, "Quickdrink", i, topkey.amount))
+            tempbutton.clicked.connect(functools.partial(tempbutton.setEnabled, False))
+            
+            timer = QTimer()
+            timer.timeout.connect(functools.partial(tempbutton.setEnabled, True))
+            timer.start(2000)
+            self.timers.append(timer)
+            
+            self.popingreds.addWidget(tempbutton)
+            self.ingrbuttons.append(tempbutton)
+            numbuttons += 1
     
     def showEvent(self, ev):
         self.bac.update_text()
 
         self._build_countdowns()
+        self._build_ingr_buttons()
         
         ev.ignore()
         
@@ -917,17 +962,7 @@ class MainWindow(QtGui.QWidget):
         self.homepage.setLayout(QtGui.QHBoxLayout())
         self.tabs.addTab(self.homepage, "Home")
         self.homepage.layout().addWidget(HomePage())
-        
-        #The IngredientsEditor widget
-        self.ingredients_tab = QtGui.QWidget()
-        self.ingredients_tab.setLayout(QtGui.QHBoxLayout())
-        self.tabs.addTab(self.ingredients_tab, "Ingredients")
-        self.ingredients_tab.layout().addWidget(IngredientsEditor())
-        try:
-            trayIcon.doNewIngredient.connect(functools.partial(self.tabs.setCurrentWidget, self.ingredients_tab))
-        except(NameError, AttributeError):
-            pass
-                
+
         #This tab shows a calendar widget that lets you add drinks to specific dates
         self.calendar_tab = QtGui.QWidget()
         self.calendar_tab.setLayout(QtGui.QHBoxLayout())
@@ -940,6 +975,16 @@ class MainWindow(QtGui.QWidget):
         self.tabs.addTab(self.shoppinglist, "Shopping List")
         self.shoppinglist.layout().addWidget(ShoppingList())
         
+        #The IngredientsEditor widget
+        self.ingredients_tab = QtGui.QWidget()
+        self.ingredients_tab.setLayout(QtGui.QHBoxLayout())
+        self.tabs.addTab(self.ingredients_tab, "Ingredients")
+        self.ingredients_tab.layout().addWidget(IngredientsEditor())
+        try:
+            trayIcon.doNewIngredient.connect(functools.partial(self.tabs.setCurrentWidget, self.ingredients_tab))
+        except(NameError, AttributeError):
+            pass
+
         #The StatisticsViewer widget
         self.statistics = QtGui.QWidget()
         self.statistics.setLayout(QtGui.QHBoxLayout())

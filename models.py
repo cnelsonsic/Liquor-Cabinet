@@ -5,7 +5,7 @@
 from sqlalchemy.ext.declarative import declarative_base
 Base = declarative_base()
 
-from sqlalchemy import Column, Integer, String, Float, DateTime
+from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean
 from sqlalchemy import ForeignKey
 
 import datetime
@@ -29,8 +29,10 @@ class Ingredient(Base):
     potency = Column(Float) #Percent alcahol
     note = Column(String)
     amount_used = Column(Float)
+    hidden = Column(Boolean)
 
-    def __init__(self, name, barcode, size, current_amount=0, threshold=-1, note="", amount_used=0, potency=5.0, id=None):
+    def __init__(self, name, barcode, size, current_amount=0, threshold=-1, 
+                 note="", amount_used=0, potency=5.0, id=None, hidden=False):
         if id is not None:
             self.id = id
         self.name = name
@@ -43,6 +45,7 @@ class Ingredient(Base):
         self.note = note
         self.amount_used = amount_used
         self.potency = potency
+        self.hidden = hidden
         
         #If no threshold is set, warn if it drops below 1/4th of its size.
         if threshold == -1:
@@ -50,7 +53,7 @@ class Ingredient(Base):
 
     def __repr__(self):
         return "Ingredient(name=%s, barcode=%s, size=%d, current_amount=%d, threshold=%d, \
-note=%s, amount_used=%d, potency=%d, id=%d)" % (repr(self.name), 
+note=%s, amount_used=%d, potency=%d, id=%d, hidden=%s)" % (repr(self.name), 
                                     repr(self.barcode), 
                                     self.size, 
                                     self.current_amount, 
@@ -58,7 +61,8 @@ note=%s, amount_used=%d, potency=%d, id=%d)" % (repr(self.name),
                                     repr(self.note), 
                                     self.amount_used, 
                                     self.potency,
-                                    self.id)
+                                    self.id,
+                                    self.hidden)
         
     def add_inventory(self, amount):
         self.current_amount += amount

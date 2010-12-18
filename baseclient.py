@@ -116,7 +116,9 @@ class BaseClient(object):
         return self.session.commit()
         
     def get_ingredients(self):
-        q = self.session.query(Ingredient).all()
+        q = self.session.query(Ingredient)
+        q = q.order_by(Ingredient.hidden)
+        q = q.all()
         return q
         
     def get_ingredients_in_stock(self):
@@ -223,15 +225,20 @@ class BaseClient(object):
     def wakeup(self, message='', timestamp=None):
         return self.log(Log.TYPES['WAKEUP'], message, date=timestamp)
 
-    def get_out_of_stock(self):
-        '''Returns a list of Ingredients that are dangerously low, sorted by popularity.'''
+    def get_out_of_stock(self, only_used=False):
+        '''Returns a list of Ingredients that are dangerously low, sorted by popularity.
+        If `only_used` is set to True, only return Ingredients that have been used before.'''
         #Ingredients, that we've bought before
         #Where the amount is below its threshold
         #Sorted by the amount we've used (popularity)
-        q = self.session.query(Ingredient).filter(Ingredient.amount_used > 0)
+        q = self.session.query(Ingredient)
+        if only_used:
+            q = q.filter(Ingredient.amount_used > 0)
         q = q.filter(Ingredient.threshold > 0)
         q = q.filter(Ingredient.current_amount <= Ingredient.threshold)
-        q = q.order_by(Ingredient.amount_used).all()
+        q = q.filter(Ingredient.hidden == False)
+        q = q.order_by(Ingredient.amount_used)
+        q = q.all()
         
         return q
     
