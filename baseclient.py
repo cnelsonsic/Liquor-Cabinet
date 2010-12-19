@@ -56,9 +56,12 @@ class BaseClient(object):
         It writes it twice, once to confirm that there is enough space for the database file,
         and then again for the real file.'''
         
-        with open(filename, "r") as f:
-            data = f.read()
-        
+        try:
+            with open(filename, "r") as f:
+                data = f.read()
+        except(IOError):
+            data = ""
+            
         fdata = ""
         fdata += "from models import *\n\n"
         fdata += "ITEMS = (\n"
@@ -79,6 +82,9 @@ class BaseClient(object):
             raise err
         
         if data != fdata:
+            if not os.path.exists(DATABASE_BACKUP_DIR):
+                os.mkdir(DATABASE_BACKUP_DIR)
+                
             date = datetime.datetime.now()
             gzfname = DATABASE_BACKUP_DIR+filename+date.strftime("%m-%d-%Y-%H-%M-%S")+".gz"
             g = gzip.GzipFile(gzfname, 'w')
@@ -88,6 +94,7 @@ class BaseClient(object):
             
             with open(filename, "w") as f:
                 f.write(fdata)
+                
             print "Wrote %d bytes in %d items." % (len(fdata), a)
         else:
             print "Database data was the same, not saving. (%d, %d)" % (len(data), len(fdata))
