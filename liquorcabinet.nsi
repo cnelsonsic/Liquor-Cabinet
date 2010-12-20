@@ -1,14 +1,19 @@
 !include "MUI.nsh"
 
-name "Liquor Cabinet"
 outFile "Installer.exe"
 
-InstallDir "$PROGRAMFILES\Liquor Cabinet"
+!define PRODUCT_NAME "Liquor Cabinet"
+!define PRODUCT_VERSION "0.0.1-alpha4"
+!define PRODUCT_PUBLISHER "C Nelson"
+
+name "${PRODUCT_NAME}"
+
+InstallDir "$PROGRAMFILES\${PRODUCT_NAME}"
 
 LicenseText "GPLv3"
 LicenseData "LICENSE"
 
-InstallDirRegKey HKCU "Software\Liquor Cabinet" ""
+InstallDirRegKey HKCU "Software\${PRODUCT_NAME}" ""
 RequestExecutionLevel user
 
 #Get Python:
@@ -32,6 +37,9 @@ ok:
 done:
 
 FunctionEnd
+
+!define MUI_ABORTWARNING
+#!define MUI_ICON "resources\bottle.png"
 
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE "LICENSE"
@@ -57,10 +65,10 @@ Var StartMenuFolder
 #UninstPage uninstConfirm
 #UninstPage uninstfiles
 
-Section "Liquor Cabinet"
+Section "${PRODUCT_NAME}"
   SectionIn RO
 
-  SetOutPath $INSTDIR
+  SetOutPath "$INSTDIR\"
   File *.py
   File CREDITS
   File LICENSE
@@ -68,15 +76,15 @@ Section "Liquor Cabinet"
   File liquor_cabinet.bat
 
   SetOutPath "$INSTDIR\resources\"
-  File "resources\*"
+  File /r "resources\*"
 
   SetOutPath "$INSTDIR\Cheetah\"
-  File "Cheetah\*"
+  File /r "Cheetah\*"
 
   SetOutPath "$INSTDIR\sqlalchemy\"
-  File "sqlalchemy\*"
+  File /r "sqlalchemy\*"
   
-  WriteRegStr HKCU "Software\Liquor Cabinet" "" $INSTDIR
+  WriteRegStr HKCU "Software\${PRODUCT_NAME}" "" $INSTDIR
   
   WriteUninstaller "$INSTDIR\Uninstall.exe"
 
@@ -98,9 +106,10 @@ Section "PyQt"
 SectionEnd
 
 Section "StartMenu Shortcuts"
-	createShortCut "$SMPROGRAMS\Liquor Cabinet\Liquor Cabinet.lnk" "${PythonExecutable} $INSTDIR\guiclient.py"
-	createShortCut "$SMPROGRAMS\Liquor Cabinet\Uninstall.lnk" "$INSTDIR\Uninstall.exe"
-	
+	SetOutPath "$INSTDIR\"
+	CreateDirectory "$SMPROGRAMS\${PRODUCT_NAME}\"
+	createShortCut "$SMPROGRAMS\${PRODUCT_NAME}\${PRODUCT_NAME}.lnk" ${PythonExecutable} "guiclient.py"
+	createShortCut "$SMPROGRAMS\${PRODUCT_NAME}\Uninstall.lnk" "$INSTDIR\Uninstall.exe"
 SectionEnd
 
 Section "Uninstall"
@@ -124,11 +133,11 @@ Section "Uninstall"
 
   RMDir "$INSTDIR"
   
-  Delete "$SMPROGRAMS\Liquor Cabinet\Liquor Cabinet.lnk"
-  Delete "$SMPROGRAMS\Liquor Cabinet\Uninstall.lnk"
-  RMDir "$SMPROGRAMS\Liquor Cabinet\"
+  Delete "$SMPROGRAMS\${PRODUCT_NAME}\${PRODUCT_NAME}.lnk"
+  Delete "$SMPROGRAMS\${PRODUCT_NAME}\Uninstall.lnk"
+  RMDir "$SMPROGRAMS\${PRODUCT_NAME}\"
   
-  DeleteRegKey /ifempty HKCU "Software\Liquor Cabinet"
+  DeleteRegKey /ifempty HKCU "Software\${PRODUCT_NAME}"
 
 SectionEnd
 
