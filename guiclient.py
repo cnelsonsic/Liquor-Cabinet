@@ -908,8 +908,9 @@ class HomePage(QtGui.QWidget):
             
             timer = QTimer()
             timer.timeout.connect(functools.partial(tempbutton.setEnabled, True))
-            timer.start(2000)
             self.timers.append(timer)
+            
+            tempbutton.clicked.connect(functools.partial(timer.start, 1000))
             
             self.popingreds.addWidget(tempbutton)
             self.ingrbuttons.append(tempbutton)
