@@ -141,6 +141,7 @@ class SystemTrayIcon(QtGui.QSystemTrayIcon):
         '''This should be called when you want to re-generate the right click menu.'''
         
         try:
+            self.menu.clear()
             self.menu.deleteLater()
         except(AttributeError):
             pass
@@ -209,8 +210,7 @@ class SystemTrayIcon(QtGui.QSystemTrayIcon):
             
             for amt in client.get_popular_buy_amounts(5):
                 tmpamt = tmpbuy.addAction(amt.name)
-                self.connect(tmpamt, QtCore.SIGNAL('activated()'), 
-                    functools.partial(self.do_buy, i, amt))
+                tmpamt.triggered.connect(functools.partial(self.do_buy, i, amt))
                     
             tmpbuy.addSeparator()
             
@@ -218,25 +218,22 @@ class SystemTrayIcon(QtGui.QSystemTrayIcon):
             amounts.reverse()
             for amt in amounts:
                 tmpamt = tmpbuy.addAction(amt.name)
-                self.connect(tmpamt, QtCore.SIGNAL('activated()'), 
-                    functools.partial(self.do_buy, i, amt))
+                tmpamt.triggered.connect(functools.partial(self.do_buy, i, amt))
             
             #Now the DRINK menu:
             if(i in instock_ingredients): #If we dont have any in stock, dont offer to drink it.
                 tmpdrink = tmpmenu.addMenu("Drink")
                 
                 for amt in client.get_popular_drink_amounts(5):
-                    tmpamt = tmpbuy.addAction(amt.name)
-                    self.connect(tmpamt, QtCore.SIGNAL('activated()'), 
-                        functools.partial(self.do_drink, i, amt))
+                    tmpamt = tmpdrink.addAction(amt.name)
+                    tmpamt.triggered.connect(functools.partial(self.do_drink, i, amt))
                         
                 tmpdrink.addSeparator()
                 
                 for amt in client.get_amounts():
                     if amt.amount <= i.current_amount:
                         tmpamt = tmpdrink.addAction(amt.name)
-                        self.connect(tmpamt, QtCore.SIGNAL('activated()'), 
-                            functools.partial(self.do_drink, i, amt))
+                        tmpamt.triggered.connect(functools.partial(self.do_drink, i, amt))
                 
                 #TODO: Half, Quarter, Eighth of store
                 
