@@ -909,6 +909,9 @@ class HomePage(QtGui.QWidget):
         ev.ignore()
         
 class DrinkCalendar(QtGui.QWidget):
+    '''Show a calendar widget which shows all the Ingredients consumed on each day as an icon.
+    Lets users add/remove/modify Ingredient modifications.
+    '''
     pass
 
 class MainWindow(QtGui.QWidget):
