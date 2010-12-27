@@ -126,9 +126,6 @@ class SystemTrayIcon(QtGui.QSystemTrayIcon):
             
     '''
     
-    doNewIngredient = QtCore.pyqtSignal()
-    doNewDrink = QtCore.pyqtSignal()
-    
     def __init__(self, icon, parent=None):
         QtGui.QSystemTrayIcon.__init__(self, icon, parent)
         
@@ -260,16 +257,17 @@ class SystemTrayIcon(QtGui.QSystemTrayIcon):
         print(value)
         
     def do_new_ingredient(self):
-        self.doNewIngredient.emit()
+        LCSIGNAL.doNewIngredient.emit()
         print("New Ingredient")
         
     def do_new_drink(self):
         self.showMessage("Not Implemented", "Adding drinks arent supported yet, sorry :(")
-        self.doNewDrink.emit()
+        LCSIGNAL.doNewDrink.emit()
         print("New Drink")
         
     def do_buy(self, ingredient, amount):
         print client.buy("", ingredient, amount.amount)
+        LCSIGNAL.doBuyAction.emit()
         
         self._regenerate_menus()
         
@@ -277,6 +275,7 @@ class SystemTrayIcon(QtGui.QSystemTrayIcon):
         
     def do_drink(self, ingredient, amount):
         print client.drink("", ingredient, amount.amount)
+        LCSIGNAL.doDrinkAction.emit()
         
         self._regenerate_menus()
         
@@ -352,6 +351,9 @@ class ShoppingList(QtGui.QWidget):
         g = self.frameGeometry()
         self.setGeometry(g.x(), g.y(), s.width()/1.5, s.height()/1.5)
         
+        for a in (LCSIGNAL.doBuyAction, LCSIGNAL.doDrinkAction):
+            a.connect(self.showEvent)
+        
         self.showEvent(None)
         
     def print_html(self):
@@ -369,7 +371,7 @@ class ShoppingList(QtGui.QWidget):
         #self.h.show()
         self.h.do_print(True)
         
-    def showEvent(self, ev):
+    def showEvent(self, ev=None):
         self.tree.clear()
         
         items = list()
@@ -657,16 +659,22 @@ class IngredientsEditor(QtGui.QWidget):
         self.editbutton.connect(self.editbutton, SIGNAL("clicked()"), self.toggle_editmode)
         self.editing = False
         
+        for a in (LCSIGNAL.doBuyAction, LCSIGNAL.doDrinkAction):
+            a.connect(self.showEvent)
+        
         self.update_listwidget()
         
-        trayIcon.doNewIngredient.connect(self.add_new_ingredient)
+        LCSIGNAL.doNewIngredient.connect(self.add_new_ingredient)
     
     def add_new_ingredient(self):
         i = models.Ingredient('New Ingredient', '', 0)
         client.try_add(i)
         client.commit()
         self.showEvent(None)
-        self.listwidget.setCurrentItem(self.listwidget.item(self.listwidget.count()-1))
+        for i in xrange(self.listwidget.count()):
+            if self.listwidget.item(i).text() == "New Ingredient":
+                self.listwidget.setCurrentItem(self.listwidget.item(i))
+                break
         self.toggle_editmode()
     
     def toggle_editmode(self):
@@ -714,7 +722,7 @@ class IngredientsEditor(QtGui.QWidget):
         else:
             print "Last selection not in ingredients!"
     
-    def showEvent(self, event):
+    def showEvent(self, event=None):
         self.update_listwidget()
         try:
             event.ignore()
@@ -806,6 +814,9 @@ class HomePage(QtGui.QWidget):
         self.ingrbuttons = []
         self.timers = []
         self._build_ingr_buttons()
+        
+        for a in (LCSIGNAL.doBuyAction, LCSIGNAL.doDrinkAction):
+            a.connect(functools.partial(self.showEvent, None))
 
         #Filler buttons
         #for i in xrange(4-numbuttons):
@@ -892,6 +903,8 @@ class HomePage(QtGui.QWidget):
             
             tempbutton.clicked.connect(functools.partial(client.drink, "Quickdrink", i, topkey.amount))
             tempbutton.clicked.connect(functools.partial(tempbutton.setEnabled, False))
+            tempbutton.clicked.connect(functools.partial(self._build_countdowns))
+            
             
             timer = QTimer()
             timer.timeout.connect(functools.partial(tempbutton.setEnabled, True))
@@ -908,7 +921,8 @@ class HomePage(QtGui.QWidget):
         self._build_countdowns()
         self._build_ingr_buttons()
         
-        ev.ignore()
+        if ev is not None:
+            ev.ignore()
         
 class DrinkCalendar(QtGui.QWidget):
     '''Show a calendar widget which shows all the Ingredients consumed on each day as an icon.
@@ -925,7 +939,7 @@ class MainWindow(QtGui.QWidget):
             global trayIcon
             if trayIcon:
                 trayIcon.activated.connect(self.__icon_activated)
-                trayIcon.doNewIngredient.connect(self.show)
+                LCSIGNAL.doNewIngredient.connect(self.show)
         except(NameError):
             pass
         except(AttributeError), err:
@@ -983,7 +997,7 @@ class MainWindow(QtGui.QWidget):
         self.tabs.addTab(self.ingredients_tab, "Ingredients")
         self.ingredients_tab.layout().addWidget(IngredientsEditor())
         try:
-            trayIcon.doNewIngredient.connect(functools.partial(self.tabs.setCurrentWidget, self.ingredients_tab))
+            LCSIGNAL.doNewIngredient.connect(functools.partial(self.tabs.setCurrentWidget, self.ingredients_tab))
         except(NameError, AttributeError):
             pass
 
@@ -1011,6 +1025,16 @@ def safe_client_dump(filename="database.py"):
     except(IOError), err:
         trayIcon.showMessage("Unable to write database to disk.", str(err))
         return err
+    
+class LiquorCabinetSignals(QtCore.QObject):
+    '''This class holds all the signals that the application uses.'''
+    doNewIngredient = QtCore.pyqtSignal()
+    doNewDrink = QtCore.pyqtSignal()
+    
+    doDrinkAction = QtCore.pyqtSignal()
+    doBuyAction = QtCore.pyqtSignal()
+
+LCSIGNAL = LiquorCabinetSignals()
 
 def main():
     signal.signal(signal.SIGINT, signal.SIG_DFL)
