@@ -12,9 +12,10 @@ import platform
 from Cheetah.Template import Template
 
 from PyQt4 import QtGui, QtCore
-from PyQt4.QtCore import QUrl, QTimer, Qt
-from PyQt4.QtGui import QPrintPreviewDialog, QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QLineEdit, QDoubleSpinBox, QTreeWidgetItem
 from PyQt4.QtCore import SIGNAL, SLOT
+from PyQt4.QtCore import QUrl, QTimer, Qt
+from PyQt4.QtGui import (QVBoxLayout, QHBoxLayout, QPushButton, QLabel, 
+                         QLineEdit, QDoubleSpinBox, QTreeWidgetItem)
 import PyQt4.QtWebKit as QtWebKit
 
 import baseclient, models
@@ -26,6 +27,7 @@ from graph_interpolation import extrapolate_to_y_zero_linear
 #Charts that graph drinking of an ingredient over time.
     #Allow multiple selections
     #Export to CSV for graphing in external applications
+
 
 class HTMLPrinter(QtWebKit.QWebView):
     '''HTMLPrinter is a handy widget that prints whatever `html` given.
@@ -40,7 +42,7 @@ class HTMLPrinter(QtWebKit.QWebView):
         path = os.getcwd()
         self.settings().setUserStyleSheetUrl(QUrl.fromLocalFile(path+"/"+RESOURCES_DIR+"style.css"))
         
-        self.preview = QPrintPreviewDialog()
+        self.preview = QtGui.QPrintPreviewDialog()
         self.connect(self.preview, SIGNAL("paintRequested (QPrinter *)"), SLOT("print (QPrinter *)"))
         self.connect(self, SIGNAL("loadFinished (bool)"), self.do_print)
             
@@ -297,9 +299,9 @@ class SystemTrayIcon(QtGui.QSystemTrayIcon):
         if dialog.result() == 1:
             self.do_time_given(dialog.get_time())
             
-class TimeSetDialog(QDialog):
+class TimeSetDialog(QtGui.QDialog):
     def __init__(self, parent=None):
-        QDialog.__init__(self, parent)
+        QtGui.QDialog.__init__(self, parent)
             
         self.layout=QVBoxLayout(self)
         
