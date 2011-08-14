@@ -905,6 +905,9 @@ class HomePage(QtGui.QWidget):
             tempbutton.clicked.connect(functools.partial(tempbutton.setEnabled, False))
             tempbutton.clicked.connect(functools.partial(self._build_countdowns))
             
+            if topkey.amount > i.current_amount:
+				tempbutton.setText(tempbutton.text()+"\n (out of stock)")
+				tempbutton.setEnabled(False)
             
             timer = QTimer()
             timer.timeout.connect(functools.partial(tempbutton.setEnabled, True))
@@ -925,11 +928,50 @@ class HomePage(QtGui.QWidget):
         if ev is not None:
             ev.ignore()
         
-class DrinkCalendar(QtGui.QWidget):
+class DrinkCalendar(QtGui.QCalendarWidget):
     '''Show a calendar widget which shows all the Ingredients consumed on each day as an icon.
     Lets users add/remove/modify Ingredient modifications.
     '''
-    pass
+    def paintCell(self, painter, rect, date):
+        dateField = date.toString("yyyyMMdd")
+        
+        font = QtGui.QApplication.font()
+        font.setPointSize(rect.width() / 8)
+        painter.setFont(font)
+        
+        painter.drawRect(rect)
+        
+        drinks = client.get_drinks_on_date(date.toPyDate())
+        totalamount = sum([a.amount for a in drinks])
+        	
+        #Get the things drunk on that day.
+        #Show an icon for each drink, maybe scaled up proportionally for the amount that day.
+        #Get the ingredient drunk for each drink, choose an icon for the varying percentages of alcohol:
+        #Default: Cocktail Glass, <30: Tropical Drink, <20:Wine glass, <5: Beer Mug, 
+        #Add a context menu to work with the data in each cell.
+        
+        if(totalamount > 0):
+            font.setWeight(QtGui.QFont.Bold)
+            font.setStyle(QtGui.QFont.StyleItalic)
+            painter.setFont(font)
+            painter.setPen(Qt.blue)
+            painter.drawText(rect, Qt.AlignCenter, QtCore.QString(str("*"*len(drinks))+" (%dml)"%totalamount))
+        elif(date==QtCore.QDate.currentDate()):
+            font.setWeight(QtGui.QFont.Bold)
+            painter.setFont(font)
+            painter.setPen(Qt.darkRed)
+        elif (date.month() == self.monthShown()):
+            font.setWeight(QtGui.QFont.Normal)
+            painter.setFont(font)
+            painter.setPen(Qt.black)
+        else:
+            font.setWeight(QtGui.QFont.Light)
+            painter.setFont(font)
+            painter.setPen(Qt.gray)
+        
+        painter.drawText(QtCore.QRect(rect.left(), rect.top(), rect.width()/2, rect.height()/2), Qt.AlignCenter, date.toString("d"))
+        
+    
 
 class MainWindow(QtGui.QWidget):
     def __init__(self, win_parent = None):
