@@ -58,10 +58,12 @@ class BeerGogglesMath(QtGui.QWidget):
             print "WRONG", realanswer
             self.emit(SIGNAL("BeerGogglesWrongAnswer"), self.finishtime, givenanswer, realanswer)
             self.correct = False
+            self.solvebutton.setText("Wrong! D:")
         else:
             self.emit(SIGNAL("BeerGogglesRightAnswer"), self.finishtime, realanswer)
             print "RIGHT :D"
             self.correct = True
+            self.solvebutton.setText("Right! :D")
         
         
         print "Answered in", self.finishtime-self.starttime, "seconds."
@@ -103,9 +105,9 @@ class BeerGogglesMath(QtGui.QWidget):
     def complex_equation(self):
         equation = "0.1"
         while type(eval(equation)) is float:
-            x = random.randint(1, 5)
-            y = random.randint(1, 5)
-            op = random.choice(("*", "/"))
+            x = random.randint(1, 9)
+            y = random.randint(1, 9)
+            op = "*" #Would have / here as a choice, but there are only a few combinations that are whole numbers
             equation = "%d%s%d" % (x, op, y)
         return equation
         
