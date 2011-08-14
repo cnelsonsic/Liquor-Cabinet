@@ -14,6 +14,7 @@ from settings import *
 
 import sqlalchemy
 from sqlalchemy import create_engine
+from sqlalchemy.sql import func
 from sqlalchemy.orm import mapper
 from sqlalchemy.orm import sessionmaker
 
@@ -248,6 +249,17 @@ class BaseClient(object):
         q = q.all()
         
         return q
+        
+    def get_drinks_on_date(self, date):
+		'''Gets all the drinks drunk on that date.'''
+		q = self.session.query(Log).filter(Log.log_type == Log.TYPES['DRINK'])
+		
+		q = q.filter(func.strftime('%Y', Log.date) == "%04d"%date.year)
+		q = q.filter(func.strftime('%m', Log.date) == "%02d"%date.month)
+		q = q.filter(func.strftime('%d', Log.date) == "%02d"%date.day)
+		q = q.order_by(Log.date.desc())
+		drinks = q.all()
+		return drinks
     
     def get_bac_simple(self, hours=24):
         '''Gets the user's estimated BAC, using a very simple formula, 
